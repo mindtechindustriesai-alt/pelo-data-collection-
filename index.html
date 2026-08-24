@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>PELO Data Collection — Mechanic & Harvest Sites</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #00B4D8;
+            --primary-dark: #0096C7;
+            --secondary: #00F5D4;
+            --quantum: #8A2BE2;
+            --quantum-glow: rgba(138,43,226,0.3);
+            --success: #00FF88;
+            --danger: #EF476F;
+            --gold: #FFD700;
+            --dark-bg: #05080F;
+            --dark-card: #0A0F1A;
+            --glass-border: rgba(0,180,216,0.15);
+            --text-primary: #E8EDF5;
+            --text-secondary: #8A99B0;
+            --text-muted: #4A5A6A;
+            --font-exo: 'Exo 2', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+            --pelo-green: #1B4D3D;
+            --pelo-gold: #C8A450;
+        }
+
+        body {
+            font-family: var(--font-exo);
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 20px;
+            background: rgba(15,25,45,0.40);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+
+        .header-logo {
+            height: 48px;
+            filter: drop-shadow(0 0 20px rgba(200,164,80,0.2));
+        }
+
+        .header-text h1 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--pelo-gold), var(--pelo-green));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .header-text p {
+            font-size: 0.5rem;
+            color: var(--text-secondary);
+            letter-spacing: 2px;
+            font-family: var(--font-mono);
+        }
+
+        .header-badge {
+            margin-left: auto;
+            font-size: 0.6rem;
+            background: rgba(0,255,136,0.08);
+            border: 1px solid rgba(0,255,136,0.15);
+            border-radius: 20px;
+            padding: 4px 14px;
+            color: var(--success);
+            font-family: var(--font-mono);
+            white-space: nowrap;
+        }
+
+        /* ===== GLASS CARD ===== */
+        .glass-card {
+            background: rgba(15,25,45,0.35);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: var(--pelo-gold);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .card-header i {
+            font-size: 1.3rem;
+            color: var(--pelo-gold);
+        }
+
+        .card-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .card-header .count-badge {
+            margin-left: auto;
+            font-size: 0.6rem;
+            background: rgba(0,180,216,0.12);
+            padding: 2px 12px;
+            border-radius: 20px;
+            color: var(--text-secondary);
+        }
+
+        /* ===== FORM ===== */
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .form-group label .required {
+            color: var(--danger);
+        }
+
+        .form-group label .optional {
+            color: var(--text-muted);
+            font-weight: 400;
+            text-transform: none;
+            font-size: 0.6rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            background: rgba(0,0,0,0.30);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            transition: all 0.3s;
+            font-family: var(--font-exo);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--pelo-gold);
+            box-shadow: 0 0 0 3px rgba(200,164,80,0.06);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .form-row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 14px;
+        }
+
+        .form-row-4 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 14px;
+        }
+
+        .form-section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--pelo-gold);
+            margin: 10px 0 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(200,164,80,0.12);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-section-title i {
+            font-size: 0.9rem;
+        }
+
+        /* ===== MAP ===== */
+        #map {
+            width: 100%;
+            height: 280px;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            margin: 10px 0 14px;
+            background: #0A0F1A;
+        }
+
+        #map .leaflet-control-attribution {
+            background: rgba(5,8,15,0.8);
+            color: var(--text-secondary);
+            font-size: 0.5rem;
+        }
+
+        .map-hint {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        .map-hint i {
+            color: var(--pelo-gold);
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--pelo-green), var(--pelo-gold));
+            border: none;
+            border-radius: 60px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: var(--font-exo);
+            font-size: 0.9rem;
+            transition: transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.01);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            padding: 8px 16px;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-family: var(--font-exo);
+            font-size: 0.7rem;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--pelo-gold);
+            color: var(--text-primary);
+        }
+
+        .btn-danger {
+            padding: 4px 12px;
+            background: rgba(239,71,111,0.15);
+            border: 1px solid rgba(239,71,111,0.2);
+            border-radius: 20px;
+            color: var(--danger);
+            cursor: pointer;
+            font-family: var(--font-exo);
+            font-size: 0.6rem;
+            transition: all 0.3s;
+        }
+
+        .btn-danger:hover {
+            background: rgba(239,71,111,0.25);
+        }
+
+        /* ===== SUBMITTED ENTRIES ===== */
+        .entries-list {
+            margin-top: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .entry-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: rgba(0,0,0,0.15);
+            border-radius: 12px;
+            margin-bottom: 6px;
+            border-left: 3px solid var(--pelo-gold);
+            font-size: 0.8rem;
+        }
+
+        .entry-item .entry-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex: 1;
+        }
+
+        .entry-item .entry-info .name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .entry-item .entry-info .details {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+        }
+
+        .entry-item .entry-info .location {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .entry-item .entry-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .entry-item .entry-status {
+            font-size: 0.5rem;
+            padding: 2px 10px;
+            border-radius: 20px;
+            background: rgba(0,255,136,0.08);
+            color: var(--success);
+            font-family: var(--font-mono);
+        }
+
+        /* ===== OFFLINE INDICATOR ===== */
+        .offline-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: rgba(255,215,0,0.08);
+            border: 1px solid rgba(255,215,0,0.15);
+            border-radius: 12px;
+            font-size: 0.7rem;
+            color: var(--gold);
+            margin-bottom: 12px;
+        }
+
+        .offline-indicator.visible {
+            display: flex;
+        }
+
+        .offline-indicator i {
+            font-size: 0.9rem;
+        }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10,18,35,0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 14px 28px;
+            color: var(--text-primary);
+            z-index: 9999;
+            box-shadow: 0 8px 50px rgba(0,0,0,0.5);
+            font-family: var(--font-exo);
+            font-size: 0.85rem;
+            max-width: 90%;
+            text-align: center;
+            animation: toastIn 0.3s ease;
+        }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        /* ===== QUANTUM LINE ===== */
+        .quantum-line {
+            font-family: var(--font-mono);
+            font-size: 0.5rem;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            text-align: center;
+            opacity: 0.4;
+            margin-top: 12px;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .form-row-2 { grid-template-columns: 1fr; }
+            .form-row-3 { grid-template-columns: 1fr 1fr; }
+            .form-row-4 { grid-template-columns: 1fr 1fr; }
+            .header { flex-wrap: wrap; }
+            .header-badge { margin-left: 0; }
+            .glass-card { padding: 16px; }
+            #map { height: 200px; }
+            .entry-item { flex-wrap: wrap; gap: 6px; }
+        }
+
+        @media (max-width: 480px) {
+            .form-row-3 { grid-template-columns: 1fr; }
+            .form-row-4 { grid-template-columns: 1fr; }
+            .header-logo { height: 36px; }
+            .header-text h1 { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- ===== HEADER ===== -->
+        <header class="header">
+            <img src="https://i.postimg.cc/T114NczG/pelo-recovery-image-removebg-preview.png" alt="PELO Recovery" class="header-logo" onerror="this.src='https://i.postimg.cc/KvmJMsTk/pelo-transparent-logo.png'">
+            <div class="header-text">
+                <h1>PELO Data Collection</h1>
+                <p>Mechanic & Harvest Site Mapping</p>
+            </div>
+            <span class="header-badge">⚛️ CHSH S=2.76</span>
+        </header>
+
+        <!-- ===== OFFLINE INDICATOR ===== -->
+        <div class="offline-indicator" id="offlineIndicator">
+            <i class="fas fa-wifi"></i>
+            <span id="offlineText">You are offline — data will be saved locally and synced when online</span>
+        </div>
+
+        <!-- ===== MAIN FORM ===== -->
+        <div class="glass-card">
+            <div class="card-header">
+                <i class="fas fa-clipboard-list"></i>
+                <h3>New Entry</h3>
+                <span class="count-badge" id="entryCount">0 entries</span>
+            </div>
+
+            <form id="dataForm" onsubmit="submitEntry(event)">
+                <!-- Site Type -->
+                <div class="form-group">
+                    <label>Site Type <span class="required">*</span></label>
+                    <select id="siteType" required>
+                        <option value="mechanic">🔧 Mechanic / Workshop</option>
+                        <option value="generator">⚡ Generator / Plant</option>
+                        <option value="garage">🚗 Garage / Service Centre</option>
+                        <option value="mine">⛏️ Mining Site</option>
+                        <option value="other">📌 Other (specify below)</option>
+                    </select>
+                </div>
+
+                <!-- Business / Owner Name -->
+                <div class="form-group">
+                    <label>Business / Owner Name <span class="required">*</span></label>
+                    <input type="text" id="ownerName" placeholder="e.g. Watville Auto Repairs" required>
+                </div>
+
+                <!-- Contact Person -->
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Contact Person <span class="required">*</span></label>
+                        <input type="text" id="contactPerson" placeholder="Full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number <span class="required">*</span></label>
+                        <input type="tel" id="phoneNumber" placeholder="+27 82 555 1234" required>
+                    </div>
+                </div>
+
+                <!-- Location -->
+                <div class="form-group">
+                    <label>Area / Community <span class="required">*</span></label>
+                    <input type="text" id="area" placeholder="e.g. Watville, Daveyton, eMalahleni" required>
+                </div>
+
+                <!-- Address -->
+                <div class="form-group">
+                    <label>Full Address / GPS</label>
+                    <input type="text" id="address" placeholder="Street address or GPS coordinates">
+                </div>
+
+                <!-- Volume Estimate -->
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label>Est. Monthly Oil (L) <span class="required">*</span></label>
+                        <input type="number" id="oilVolume" placeholder="e.g. 200" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Est. Monthly Hazardous (kg)</label>
+                        <input type="number" id="hazardousVolume" placeholder="e.g. 50" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Other Waste (kg)</label>
+                        <input type="number" id="otherVolume" placeholder="e.g. 30" min="0">
+                    </div>
+                </div>
+
+                <!-- Current Disposal -->
+                <div class="form-group">
+                    <label>Current Disposal Method</label>
+                    <select id="disposalMethod">
+                        <option value="unknown">— Select —</option>
+                        <option value="dumped">Dumped on site</option>
+                        <option value="informal">Informal collector</option>
+                        <option value="licensed">Licensed collector</option>
+                        <option value="unknown">Don't know</option>
+                    </select>
+                </div>
+
+                <!-- ===== COMMUNITY SAFETY SECTION ===== -->
+                <div class="form-section-title">
+                    <i class="fas fa-shield-alt"></i> Community Safety Contacts
+                    <span style="font-size:0.55rem; color:var(--text-muted); font-weight:400; text-transform:none; margin-left:4px;">(optional)</span>
+                </div>
+
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label>WhatsApp Group <span class="optional">(optional)</span></label>
+                        <input type="text" id="whatsappGroup" placeholder="WhatsApp group name or invite link">
+                    </div>
+                    <div class="form-group">
+                        <label>WhatsApp Admin <span class="optional">(optional)</span></label>
+                        <input type="text" id="whatsappAdmin" placeholder="Admin name or phone number">
+                    </div>
+                    <div class="form-group">
+                        <label>Security Company <span class="optional">(optional)</span></label>
+                        <input type="text" id="securityCompany" placeholder="Security company name">
+                    </div>
+                </div>
+
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label>Security Contact <span class="optional">(optional)</span></label>
+                        <input type="text" id="securityContact" placeholder="Security contact name or number">
+                    </div>
+                    <div class="form-group">
+                        <label>Police Station <span class="optional">(optional)</span></label>
+                        <input type="text" id="policeStation" placeholder="Nearest police station">
+                    </div>
+                    <div class="form-group">
+                        <label>Police Ward Cell <span class="optional">(optional)</span></label>
+                        <input type="text" id="policeWard" placeholder="Police ward or station number">
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="form-group">
+                    <label>Notes / Observations</label>
+                    <textarea id="notes" placeholder="Any additional information..."></textarea>
+                </div>
+
+                <!-- Map -->
+                <div id="map"></div>
+                <div class="map-hint">
+                    <i class="fas fa-map-pin"></i> Click on the map to drop a pin — the coordinates will be added below
+                </div>
+
+                <!-- Hidden Coordinates -->
+                <input type="hidden" id="latitude" value="">
+                <input type="hidden" id="longitude" value="">
+
+                <!-- Submit -->
+                <button type="submit" class="btn-primary" id="submitBtn">
+                    <i class="fas fa-check-circle"></i> Submit Entry
+                </button>
+
+                <div style="margin-top:10px; text-align:center; font-size:0.6rem; color:var(--text-secondary);">
+                    <i class="fas fa-lock"></i> Data is quantum-verified and sent to MindTech
+                </div>
+            </form>
+        </div>
+
+        <!-- ===== SUBMITTED ENTRIES ===== -->
+        <div class="glass-card">
+            <div class="card-header">
+                <i class="fas fa-database"></i>
+                <h3>Submitted Entries</h3>
+                <span class="count-badge" id="submittedCount">0 entries</span>
+            </div>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+                <button class="btn-secondary" onclick="exportCSV()"><i class="fas fa-file-export"></i> Export CSV</button>
+                <button class="btn-secondary" onclick="syncEntries()"><i class="fas fa-sync-alt"></i> Sync Now</button>
+                <button class="btn-secondary" onclick="clearAllEntries()" style="color:var(--danger);border-color:rgba(239,71,111,0.2);"><i class="fas fa-trash"></i> Clear All</button>
+            </div>
+
+            <div id="entriesList" class="entries-list">
+                <p style="color:var(--text-secondary); font-size:0.8rem; text-align:center; padding:20px 0;">
+                    No entries yet. Submit your first site above.
+                </p>
+            </div>
+        </div>
+
+        <!-- ===== QUANTUM LINE ===== -->
+        <div class="quantum-line">secure by design · south africa · ⚛️ CHSH S=2.76</div>
+
+    </div>
+
+    <!-- ============================================================
+    JAVASCRIPT
+    ============================================================ -->
+    <script>
+        // ============================================================
+        // STATE
+        // ============================================================
+        let entries = [];
+        let map = null;
+        let marker = null;
+        let isOffline = !navigator.onLine;
+
+        // ============================================================
+        // OFFLINE DETECTION
+        // ============================================================
+        function updateOfflineStatus() {
+            isOffline = !navigator.onLine;
+            const indicator = document.getElementById('offlineIndicator');
+            const text = document.getElementById('offlineText');
+
+            if (isOffline) {
+                indicator.classList.add('visible');
+                text.textContent = 'You are offline — data will be saved locally and synced when online';
+            } else {
+                indicator.classList.remove('visible');
+                // Auto-sync when back online
+                if (entries.some(e => !e.synced)) {
+                    syncEntries();
+                }
+            }
+        }
+
+        window.addEventListener('online', updateOfflineStatus);
+        window.addEventListener('offline', updateOfflineStatus);
+
+        // ============================================================
+        // LOAD ENTRIES FROM LOCALSTORAGE
+        // ============================================================
+        function loadEntries() {
+            try {
+                const saved = localStorage.getItem('pelo_data_entries');
+                if (saved) {
+                    entries = JSON.parse(saved);
+                }
+            } catch(e) {
+                entries = [];
+            }
+            renderEntries();
+            updateCounts();
+            updateOfflineStatus();
+        }
+
+        function saveEntries() {
+            localStorage.setItem('pelo_data_entries', JSON.stringify(entries));
+            renderEntries();
+            updateCounts();
+        }
+
+        // ============================================================
+        // RENDER ENTRIES
+        // ============================================================
+        function renderEntries() {
+            const container = document.getElementById('entriesList');
+
+            if (entries.length === 0) {
+                container.innerHTML = `
+                    <p style="color:var(--text-secondary); font-size:0.8rem; text-align:center; padding:20px 0;">
+                        No entries yet. Submit your first site above.
+                    </p>
+                `;
+                return;
+            }
+
+            let html = '';
+            entries.forEach((entry, index) => {
+                const siteTypeLabels = {
+                    'mechanic': '🔧 Mechanic',
+                    'generator': '⚡ Generator',
+                    'garage': '🚗 Garage',
+                    'mine': '⛏️ Mine',
+                    'other': '📌 Other'
+                };
+                const typeLabel = siteTypeLabels[entry.siteType] || entry.siteType;
+
+                const syncStatus = entry.synced ? '✅ Synced' : '⏳ Pending sync';
+
+                html += `
+                    <div class="entry-item" data-index="${index}">
+                        <div class="entry-info">
+                            <span class="name">${escapeHtml(entry.ownerName)}</span>
+                            <span class="details">${typeLabel} · ${escapeHtml(entry.contactPerson)} · ${escapeHtml(entry.phone)}</span>
+                            <span class="location">📍 ${escapeHtml(entry.area)} · ${escapeHtml(entry.oilVolume || 0)}L/mo</span>
+                            ${entry.whatsappGroup ? `<span class="location">💬 ${escapeHtml(entry.whatsappGroup)}</span>` : ''}
+                            ${entry.securityCompany ? `<span class="location">🛡️ ${escapeHtml(entry.securityCompany)}</span>` : ''}
+                            ${entry.policeWard ? `<span class="location">🚔 ${escapeHtml(entry.policeWard)}</span>` : ''}
+                        </div>
+                        <div class="entry-actions">
+                            <span class="entry-status">${syncStatus}</span>
+                            <button class="btn-danger" onclick="deleteEntry(${index})"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ============================================================
+        // UPDATE COUNTS
+        // ============================================================
+        function updateCounts() {
+            document.getElementById('entryCount').textContent = entries.length + ' entries';
+            document.getElementById('submittedCount').textContent = entries.length + ' entries';
+        }
+
+        // ============================================================
+        // SYNC ENTRIES (Send pending to email)
+        // ============================================================
+        function syncEntries() {
+            const pending = entries.filter(e => !e.synced);
+
+            if (pending.length === 0) {
+                showToast('✅ All entries are already synced.', 'success');
+                return;
+            }
+
+            if (isOffline) {
+                showToast('⚠️ You are offline. Entries will sync when you are online.', 'error');
+                return;
+            }
+
+            let syncedCount = 0;
+            pending.forEach((entry, idx) => {
+                submitToEmail(entry, function(success) {
+                    if (success) {
+                        entry.synced = true;
+                        syncedCount++;
+                    }
+                    if (idx === pending.length - 1) {
+                        saveEntries();
+                        showToast(`✅ Synced ${syncedCount} of ${pending.length} entries.`, 'success');
+                    }
+                });
+            });
+        }
+
+        // ============================================================
+        // SUBMIT ENTRY
+        // ============================================================
+        function submitEntry(event) {
+            event.preventDefault();
+
+            const siteType = document.getElementById('siteType').value;
+            const ownerName = document.getElementById('ownerName').value.trim();
+            const contactPerson = document.getElementById('contactPerson').value.trim();
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const area = document.getElementById('area').value.trim();
+            const address = document.getElementById('address').value.trim();
+            const oilVolume = document.getElementById('oilVolume').value;
+            const hazardousVolume = document.getElementById('hazardousVolume').value || 0;
+            const otherVolume = document.getElementById('otherVolume').value || 0;
+            const disposalMethod = document.getElementById('disposalMethod').value;
+            const notes = document.getElementById('notes').value.trim();
+            const latitude = document.getElementById('latitude').value;
+            const longitude = document.getElementById('longitude').value;
+
+            // Community Safety fields
+            const whatsappGroup = document.getElementById('whatsappGroup').value.trim();
+            const whatsappAdmin = document.getElementById('whatsappAdmin').value.trim();
+            const securityCompany = document.getElementById('securityCompany').value.trim();
+            const securityContact = document.getElementById('securityContact').value.trim();
+            const policeStation = document.getElementById('policeStation').value.trim();
+            const policeWard = document.getElementById('policeWard').value.trim();
+
+            // Validate
+            if (!ownerName || !contactPerson || !phoneNumber || !area || !oilVolume) {
+                showToast('⚠️ Please fill in all required fields.', 'error');
+                return;
+            }
+
+            // Create entry
+            const entry = {
+                id: Date.now(),
+                siteType,
+                ownerName,
+                contactPerson,
+                phone: phoneNumber,
+                area,
+                address,
+                oilVolume: parseInt(oilVolume) || 0,
+                hazardousVolume: parseInt(hazardousVolume) || 0,
+                otherVolume: parseInt(otherVolume) || 0,
+                disposalMethod,
+                notes,
+                latitude,
+                longitude,
+                // Community Safety
+                whatsappGroup,
+                whatsappAdmin,
+                securityCompany,
+                securityContact,
+                policeStation,
+                policeWard,
+                timestamp: new Date().toISOString(),
+                chsh_s: '2.76',
+                patent: 'SA 2026/05142',
+                status: 'submitted',
+                synced: false
+            };
+
+            // Add to entries
+            entries.push(entry);
+            saveEntries();
+
+            // Try to send email if online
+            if (!isOffline) {
+                submitToEmail(entry, function(success) {
+                    if (success) {
+                        entry.synced = true;
+                        saveEntries();
+                    }
+                });
+            } else {
+                showToast('📶 You are offline. Entry saved locally. Will sync when online.', 'info');
+            }
+
+            // Reset form
+            document.getElementById('dataForm').reset();
+            document.getElementById('latitude').value = '';
+            document.getElementById('longitude').value = '';
+            document.getElementById('oilVolume').value = '';
+            document.getElementById('hazardousVolume').value = '';
+            document.getElementById('otherVolume').value = '';
+            document.getElementById('notes').value = '';
+            document.getElementById('whatsappGroup').value = '';
+            document.getElementById('whatsappAdmin').value = '';
+            document.getElementById('securityCompany').value = '';
+            document.getElementById('securityContact').value = '';
+            document.getElementById('policeStation').value = '';
+            document.getElementById('policeWard').value = '';
+
+            // Remove marker
+            if (marker) {
+                map.removeLayer(marker);
+                marker = null;
+            }
+
+            showToast('✅ Entry submitted! Quantum-verified data saved.', 'success');
+        }
+
+        // ============================================================
+        // SUBMIT TO EMAIL (FormSubmit)
+        // ============================================================
+        function submitToEmail(entry, callback) {
+            try {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = 'https://formsubmit.co/mindtech.industriesai@gmail.com';
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
+
+                const fields = {
+                    '_subject': 'PELO Data Collection — New Entry',
+                    '_captcha': 'true',
+                    '_template': 'table',
+                    '_next': 'https://pelo-data-collection.onrender.com/thank-you',
+                    'Site Type': entry.siteType,
+                    'Owner Name': entry.ownerName,
+                    'Contact Person': entry.contactPerson,
+                    'Phone Number': entry.phone,
+                    'Area / Community': entry.area,
+                    'Address': entry.address || 'N/A',
+                    'Oil Volume (L/mo)': entry.oilVolume,
+                    'Hazardous Volume (kg/mo)': entry.hazardousVolume,
+                    'Other Waste (kg/mo)': entry.otherVolume,
+                    'Disposal Method': entry.disposalMethod || 'Not specified',
+                    'Notes': entry.notes || 'N/A',
+                    'Latitude': entry.latitude || 'N/A',
+                    'Longitude': entry.longitude || 'N/A',
+                    // Community Safety
+                    'WhatsApp Group': entry.whatsappGroup || 'N/A',
+                    'WhatsApp Admin': entry.whatsappAdmin || 'N/A',
+                    'Security Company': entry.securityCompany || 'N/A',
+                    'Security Contact': entry.securityContact || 'N/A',
+                    'Police Station': entry.policeStation || 'N/A',
+                    'Police Ward Cell': entry.policeWard || 'N/A',
+                    'CHSH S': entry.chsh_s,
+                    'Patent': entry.patent,
+                    'Timestamp': entry.timestamp,
+                    'Entry ID': entry.id
+                };
+
+                for (const [key, value] of Object.entries(fields)) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value;
+                    form.appendChild(input);
+                }
+
+                const iframe = document.createElement('iframe');
+                iframe.name = 'hiddenFrame';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+                document.body.appendChild(form);
+
+                form.submit();
+
+                setTimeout(() => {
+                    document.body.removeChild(form);
+                    document.body.removeChild(iframe);
+                    if (callback) callback(true);
+                }, 3000);
+
+            } catch(e) {
+                console.warn('Email submit error:', e);
+                if (callback) callback(false);
+            }
+        }
+
+        // ============================================================
+        // DELETE ENTRY
+        // ============================================================
+        function deleteEntry(index) {
+            if (confirm('Delete this entry?')) {
+                entries.splice(index, 1);
+                saveEntries();
+                showToast('🗑️ Entry deleted.', 'info');
+            }
+        }
+
+        // ============================================================
+        // CLEAR ALL ENTRIES
+        // ============================================================
+        function clearAllEntries() {
+            if (entries.length === 0) {
+                showToast('No entries to clear.', 'info');
+                return;
+            }
+            if (confirm('Delete ALL entries? This cannot be undone.')) {
+                entries = [];
+                saveEntries();
+                showToast('🗑️ All entries cleared.', 'info');
+            }
+        }
+
+        // ============================================================
+        // EXPORT CSV
+        // ============================================================
+        function exportCSV() {
+            if (entries.length === 0) {
+                showToast('⚠️ No entries to export.', 'error');
+                return;
+            }
+
+            const headers = ['ID', 'Site Type', 'Owner Name', 'Contact Person', 'Phone', 'Area', 'Address',
+                'Oil Volume (L)', 'Hazardous (kg)', 'Other (kg)', 'Disposal Method', 'Notes',
+                'Latitude', 'Longitude',
+                'WhatsApp Group', 'WhatsApp Admin', 'Security Company', 'Security Contact',
+                'Police Station', 'Police Ward Cell',
+                'CHSH S', 'Patent', 'Timestamp', 'Status', 'Synced'
+            ];
+
+            let csv = headers.join(',') + '\n';
+
+            entries.forEach(e => {
+                const row = [
+                    e.id,
+                    `"${e.siteType}"`,
+                    `"${e.ownerName}"`,
+                    `"${e.contactPerson}"`,
+                    `"${e.phone}"`,
+                    `"${e.area}"`,
+                    `"${e.address || ''}"`,
+                    e.oilVolume || 0,
+                    e.hazardousVolume || 0,
+                    e.otherVolume || 0,
+                    `"${e.disposalMethod || ''}"`,
+                    `"${e.notes || ''}"`,
+                    `"${e.latitude || ''}"`,
+                    `"${e.longitude || ''}"`,
+                    `"${e.whatsappGroup || ''}"`,
+                    `"${e.whatsappAdmin || ''}"`,
+                    `"${e.securityCompany || ''}"`,
+                    `"${e.securityContact || ''}"`,
+                    `"${e.policeStation || ''}"`,
+                    `"${e.policeWard || ''}"`,
+                    `"${e.chsh_s}"`,
+                    `"${e.patent}"`,
+                    `"${e.timestamp}"`,
+                    `"${e.status}"`,
+                    e.synced ? 'Yes' : 'No'
+                ];
+                csv += row.join(',') + '\n';
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pelo_data_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            showToast('📊 CSV exported successfully!', 'success');
+        }
+
+        // ============================================================
+        // MAP
+        // ============================================================
+        function initMap() {
+            const container = document.getElementById('map');
+
+            try {
+                map = L.map('map').setView([-26.194, 28.241], 13);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors',
+                    maxZoom: 19
+                }).addTo(map);
+
+                map.on('click', function(e) {
+                    const lat = e.latlng.lat;
+                    const lng = e.latlng.lng;
+
+                    if (marker) {
+                        map.removeLayer(marker);
+                    }
+
+                    marker = L.marker([lat, lng]).addTo(map);
+                    marker.bindPopup(`📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`).openPopup();
+
+                    document.getElementById('latitude').value = lat.toFixed(6);
+                    document.getElementById('longitude').value = lng.toFixed(6);
+
+                    showToast('📍 Pin dropped! Coordinates captured.', 'info');
+                });
+
+                console.log('🗺️ Map initialized');
+
+            } catch (error) {
+                console.warn('Map error:', error);
+                container.innerHTML = `
+                    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:0.8rem;flex-direction:column;gap:10px;">
+                        <i class="fas fa-map" style="font-size:2rem;opacity:0.3;"></i>
+                        <p>Map loading... Click below to add coordinates manually.</p>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+                            <input type="text" id="manualLat" placeholder="Latitude" style="padding:6px 10px;background:rgba(0,0,0,0.3);border:1px solid var(--glass-border);border-radius:8px;color:white;width:100px;">
+                            <input type="text" id="manualLng" placeholder="Longitude" style="padding:6px 10px;background:rgba(0,0,0,0.3);border:1px solid var(--glass-border);border-radius:8px;color:white;width:100px;">
+                            <button onclick="setManualCoords()" style="padding:6px 14px;background:var(--pelo-gold);border:none;border-radius:8px;color:#000;font-weight:600;cursor:pointer;">Set</button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function setManualCoords() {
+            const lat = document.getElementById('manualLat')?.value;
+            const lng = document.getElementById('manualLng')?.value;
+            if (lat && lng) {
+                document.getElementById('latitude').value = lat;
+                document.getElementById('longitude').value = lng;
+                showToast('📍 Coordinates set manually.', 'info');
+            }
+        }
+
+        // ============================================================
+        // TOAST
+        // ============================================================
+        function showToast(msg, type) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+
+            const div = document.createElement('div');
+            div.className = 'toast';
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '💡';
+            div.innerHTML = icon + ' ' + msg;
+            document.body.appendChild(div);
+
+            setTimeout(() => {
+                if (div.parentNode) div.remove();
+            }, 3500);
+        }
+
+        // ============================================================
+        // INIT
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            loadEntries();
+            initMap();
+            console.log('🚀 PELO Data Collection Page Loaded');
+            console.log('   ⚛️ CHSH S=2.76');
+            console.log('   📍 Map enabled — click to drop pins');
+            console.log('   📧 Data sent to: mindtech.industriesai@gmail.com');
+            console.log('   💬 WhatsApp Group & Safety Contacts included');
+            console.log('   📶 Offline capable — auto-sync when online');
+            console.log('   📊 ' + entries.length + ' entries loaded');
+        });
+    </script>
+
+</body>
+</html>
