@@ -52,7 +52,7 @@
             z-index: 1;
         }
 
-        /* ===== HEADER ===== */
+        /* ===== HEADER WITH LOGO ===== */
         .header {
             display: flex;
             align-items: center;
@@ -67,8 +67,14 @@
         }
 
         .header-logo {
-            height: 48px;
-            filter: drop-shadow(0 0 20px rgba(200,164,80,0.2));
+            height: 52px;
+            width: auto;
+            filter: drop-shadow(0 0 20px rgba(200,164,80,0.25));
+            flex-shrink: 0;
+        }
+
+        .header-text {
+            flex: 1;
         }
 
         .header-text h1 {
@@ -88,7 +94,6 @@
         }
 
         .header-badge {
-            margin-left: auto;
             font-size: 0.6rem;
             background: rgba(0,255,136,0.08);
             border: 1px solid rgba(0,255,136,0.15);
@@ -97,6 +102,7 @@
             color: var(--success);
             font-family: var(--font-mono);
             white-space: nowrap;
+            flex-shrink: 0;
         }
 
         /* ===== GLASS CARD ===== */
@@ -448,6 +454,7 @@
             .glass-card { padding: 16px; }
             #map { height: 200px; }
             .entry-item { flex-wrap: wrap; gap: 6px; }
+            .header-logo { height: 40px; }
         }
 
         @media (max-width: 480px) {
@@ -455,6 +462,7 @@
             .form-row-4 { grid-template-columns: 1fr; }
             .header-logo { height: 36px; }
             .header-text h1 { font-size: 0.9rem; }
+            .header-badge { font-size: 0.5rem; padding: 2px 10px; }
         }
     </style>
 </head>
@@ -462,12 +470,12 @@
 
     <div class="container">
 
-        <!-- ===== HEADER ===== -->
+        <!-- ===== HEADER WITH LOGO ===== -->
         <header class="header">
-            <img src="https://i.postimg.cc/T114NczG/pelo-recovery-image-removebg-preview.png" alt="PELO Recovery" class="header-logo" onerror="this.src='https://i.postimg.cc/KvmJMsTk/pelo-transparent-logo.png'">
+            <img src="https://i.postimg.cc/T114NczG/pelo-recovery-image-removebg-preview.png" alt="PELO Recovery Centre" class="header-logo" onerror="this.src='https://i.postimg.cc/KvmJMsTk/pelo-transparent-logo.png'">
             <div class="header-text">
                 <h1>PELO Data Collection</h1>
-                <p>Mechanic & Harvest Site Mapping</p>
+                <p>Mechanic &amp; Harvest Site Mapping</p>
             </div>
             <span class="header-badge">⚛️ CHSH S=2.76</span>
         </header>
@@ -671,7 +679,6 @@
                 text.textContent = 'You are offline — data will be saved locally and synced when online';
             } else {
                 indicator.classList.remove('visible');
-                // Auto-sync when back online
                 if (entries.some(e => !e.synced)) {
                     syncEntries();
                 }
@@ -769,7 +776,7 @@
         }
 
         // ============================================================
-        // SYNC ENTRIES (Send pending to email)
+        // SYNC ENTRIES
         // ============================================================
         function syncEntries() {
             const pending = entries.filter(e => !e.synced);
@@ -819,7 +826,6 @@
             const latitude = document.getElementById('latitude').value;
             const longitude = document.getElementById('longitude').value;
 
-            // Community Safety fields
             const whatsappGroup = document.getElementById('whatsappGroup').value.trim();
             const whatsappAdmin = document.getElementById('whatsappAdmin').value.trim();
             const securityCompany = document.getElementById('securityCompany').value.trim();
@@ -827,13 +833,11 @@
             const policeStation = document.getElementById('policeStation').value.trim();
             const policeWard = document.getElementById('policeWard').value.trim();
 
-            // Validate
             if (!ownerName || !contactPerson || !phoneNumber || !area || !oilVolume) {
                 showToast('⚠️ Please fill in all required fields.', 'error');
                 return;
             }
 
-            // Create entry
             const entry = {
                 id: Date.now(),
                 siteType,
@@ -849,7 +853,6 @@
                 notes,
                 latitude,
                 longitude,
-                // Community Safety
                 whatsappGroup,
                 whatsappAdmin,
                 securityCompany,
@@ -863,11 +866,9 @@
                 synced: false
             };
 
-            // Add to entries
             entries.push(entry);
             saveEntries();
 
-            // Try to send email if online
             if (!isOffline) {
                 submitToEmail(entry, function(success) {
                     if (success) {
@@ -879,7 +880,6 @@
                 showToast('📶 You are offline. Entry saved locally. Will sync when online.', 'info');
             }
 
-            // Reset form
             document.getElementById('dataForm').reset();
             document.getElementById('latitude').value = '';
             document.getElementById('longitude').value = '';
@@ -894,7 +894,6 @@
             document.getElementById('policeStation').value = '';
             document.getElementById('policeWard').value = '';
 
-            // Remove marker
             if (marker) {
                 map.removeLayer(marker);
                 marker = null;
@@ -932,7 +931,6 @@
                     'Notes': entry.notes || 'N/A',
                     'Latitude': entry.latitude || 'N/A',
                     'Longitude': entry.longitude || 'N/A',
-                    // Community Safety
                     'WhatsApp Group': entry.whatsappGroup || 'N/A',
                     'WhatsApp Admin': entry.whatsappAdmin || 'N/A',
                     'Security Company': entry.securityCompany || 'N/A',
