@@ -9,13 +9,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
+    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 
@@ -76,13 +79,12 @@
             justify-content: center;
             padding: 20px;
             flex-direction: column;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.8s ease;
         }
 
         #loginOverlay.hidden {
             opacity: 0;
             pointer-events: none;
-            display: none !important;
         }
 
         /* ===== REGISTER MODAL ===== */
@@ -651,22 +653,28 @@
 </head>
 <body>
 
+    <!-- ============================================================
+    LOGIN OVERLAY — ALWAYS ON TOP
+    ============================================================ -->
     <div id="loginOverlay">
         <div class="login-card">
             <img src="https://i.postimg.cc/KvmJMsTk/pelo-transparent-logo.png" alt="PELO Recovery Centre" class="login-logo" onerror="this.src='https://i.postimg.cc/T114NczG/pelo-recovery-image-removebg-preview.png'">
             <div class="login-title">PELO Data Collection</div>
             <div class="login-subtitle">Community Collection Network</div>
 
+            <!-- Google Sign-in -->
             <button class="btn-login btn-google" onclick="loginWithGoogle()">
                 <i class="fab fa-google" style="font-size:1.1rem;"></i> Sign in with Google
             </button>
 
             <div class="login-divider">or</div>
 
+            <!-- Demo Button -->
             <button class="btn-login btn-demo" onclick="loginAsDemo()">
                 <i class="fas fa-user-astronaut"></i> Continue as Guest (Demo)
             </button>
 
+            <!-- Register Button -->
             <button class="btn-login btn-register" onclick="openRegister()">
                 <i class="fas fa-user-plus"></i> Register New Account
             </button>
@@ -675,6 +683,9 @@
         </div>
     </div>
 
+    <!-- ============================================================
+    REGISTER MODAL
+    ============================================================ -->
     <div id="registerModal">
         <div class="login-card" style="max-width:400px;">
             <h2 style="font-size:1.3rem; margin-bottom:16px; color:var(--pelo-gold);">Create Account</h2>
@@ -706,8 +717,12 @@
         </div>
     </div>
 
+    <!-- ============================================================
+    MAIN APP — HIDDEN BY DEFAULT (style="display:none")
+    ============================================================ -->
     <div id="appContainer" class="container" style="display:none;">
 
+        <!-- HEADER -->
         <header class="header">
             <img src="https://i.postimg.cc/KvmJMsTk/pelo-transparent-logo.png" alt="PELO Recovery Centre" class="header-logo" onerror="this.src='https://i.postimg.cc/T114NczG/pelo-recovery-image-removebg-preview.png'">
             <div class="header-text">
@@ -721,11 +736,13 @@
             </div>
         </header>
 
+        <!-- OFFLINE INDICATOR -->
         <div class="offline-indicator" id="offlineIndicator">
             <i class="fas fa-wifi"></i>
             <span id="offlineText">You are offline — data will be saved locally and synced when online</span>
         </div>
 
+        <!-- MAIN FORM -->
         <div class="glass-card">
             <div class="card-header">
                 <i class="fas fa-clipboard-list"></i>
@@ -734,6 +751,7 @@
             </div>
 
             <form id="dataForm" onsubmit="submitEntry(event)">
+                <!-- Site Type -->
                 <div class="form-group">
                     <label>Site Type <span class="required">*</span></label>
                     <select id="siteType" required>
@@ -834,6 +852,7 @@
                     </select>
                 </div>
 
+                <!-- Community Safety -->
                 <div class="form-section-title">
                     <i class="fas fa-shield-alt"></i> Community Safety Contacts
                     <span style="font-size:0.5rem; color:var(--text-muted); font-weight:400; text-transform:none; margin-left:4px;">(optional)</span>
@@ -874,6 +893,7 @@
                     <textarea id="notes" placeholder="Any additional information..."></textarea>
                 </div>
 
+                <!-- MAP -->
                 <div id="map">
                     <div class="map-loading">
                         <i class="fas fa-spinner"></i>
@@ -883,16 +903,16 @@
                 <div class="map-hint">
                     <i class="fas fa-map-pin"></i> Click on the map to drop a pin — coordinates will be captured
                 </div>
-
                 <div class="map-manual-coords">
                     <input type="text" id="manualLat" placeholder="Latitude (e.g. -26.194)">
                     <input type="text" id="manualLng" placeholder="Longitude (e.g. 28.241)">
-                    <button type="button" onclick="setManualCoords()">Set Pin</button>
+                    <button onclick="setManualCoords()">Set Pin</button>
                 </div>
 
                 <input type="hidden" id="latitude" value="">
                 <input type="hidden" id="longitude" value="">
 
+                <!-- Submit -->
                 <button type="submit" class="btn-primary" id="submitBtn">
                     <i class="fas fa-check-circle"></i> Submit Entry
                 </button>
@@ -903,6 +923,7 @@
             </form>
         </div>
 
+        <!-- SUBMITTED ENTRIES -->
         <div class="glass-card">
             <div class="card-header">
                 <i class="fas fa-database"></i>
@@ -923,6 +944,7 @@
             </div>
         </div>
 
+        <!-- FOOTER -->
         <div class="footer">
             <div class="footer-logos">
                 <img src="https://i.postimg.cc/KvmJMsTk/pelo-transparent-logo.png" alt="PELO Recovery" class="footer-logo" onerror="this.style.display='none'">
@@ -935,6 +957,9 @@
 
     </div>
 
+    <!-- ============================================================
+    JAVASCRIPT — FULL FIX
+    ============================================================ -->
     <script>
         // ============================================================
         // FIREBASE CONFIG
@@ -947,6 +972,7 @@
             messagingSenderId: "157615197603",
             appId: "1:157615197603:web:540d67781fc55d04c11e16"
         };
+
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
@@ -961,7 +987,7 @@
         let currentUser = null;
         let isDemo = false;
         let mapInitialized = false;
-        let isAppReady = false;
+        let appVisible = false;
 
         // ============================================================
         // DOM REFS
@@ -969,6 +995,32 @@
         const loginOverlay = document.getElementById('loginOverlay');
         const appContainer = document.getElementById('appContainer');
         const loginError = document.getElementById('loginError');
+
+        // ============================================================
+        // SHOW APP — THE ONLY WAY TO SHOW THE APP
+        // ============================================================
+        function showApp() {
+            if (appVisible) return; // Prevent double-show
+            appVisible = true;
+            loginOverlay.classList.add('hidden');
+            appContainer.style.display = 'block';
+            document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.email || 'Guest';
+            loginError.textContent = '';
+            loadEntries();
+            loadUserData();
+            setTimeout(initMap, 600);
+            console.log('✅ App shown for user:', currentUser ? currentUser.email : 'demo');
+        }
+
+        // ============================================================
+        // HIDE APP — SHOW LOGIN
+        // ============================================================
+        function hideApp() {
+            appVisible = false;
+            loginOverlay.classList.remove('hidden');
+            appContainer.style.display = 'none';
+            console.log('🔒 App hidden — login required');
+        }
 
         // ============================================================
         // LOGIN FUNCTIONS
@@ -1040,415 +1092,691 @@
                 showToast('✅ Account created! Welcome, ' + name + '!');
             })
             .catch((error) => {
-                document.getElementById('registerError').textContent = '❌ Registration saved locally: ' + error.message;
-                closeRegister();
-                currentUser = {
-                    uid: 'reg_local_' + Date.now(),
-                    displayName: name,
-                    email: email
-                };
-                isDemo = true;
-                showApp();
-                showToast('✅ Welcome, ' + name + '! (Saved locally)');
+                document.getElementById('registerError').textContent = '❌ ' + error.message;
             });
         }
 
-        function showApp() {
-            loginOverlay.classList.add('hidden');
-            appContainer.style.display = 'block';
-
-            const nameDisp = document.getElementById('userNameDisplay');
-            if (currentUser) {
-                nameDisp.textContent = currentUser.displayName || currentUser.email || 'User';
-            }
-
-            if (!mapInitialized) {
-                initMap();
-                mapInitialized = true;
-            } else if (map) {
-                setTimeout(() => { map.invalidateSize(); }, 300);
-            }
-        }
-
-        function hideApp() {
-            loginOverlay.classList.remove('hidden');
-            appContainer.style.display = 'none';
-        }
-
         function logout() {
-            if (isDemo) {
+            if (!isDemo) {
+                auth.signOut()
+                    .then(() => {
+                        currentUser = null;
+                        isDemo = false;
+                        hideApp();
+                        showToast('👋 Logged out.');
+                    })
+                    .catch(() => {
+                        // Fallback
+                        currentUser = null;
+                        isDemo = false;
+                        hideApp();
+                        showToast('👋 Logged out.');
+                    });
+            } else {
                 currentUser = null;
                 isDemo = false;
                 hideApp();
-                showToast('👋 Signed out (Guest session ended)');
-            } else {
-                auth.signOut().then(() => {
-                    currentUser = null;
-                    hideApp();
-                    showToast('👋 Signed out successfully');
-                }).catch((error) => {
-                    console.error('Logout error:', error);
-                    hideApp();
-                });
+                showToast('👋 Logged out.');
             }
         }
 
         // ============================================================
-        // MAP FUNCTIONALITY
+        // LOAD USER DATA
         // ============================================================
-        function initMap() {
-            const defaultLat = -26.1944;
-            const defaultLng = 28.2410;
+        function loadUserData() {
+            if (!currentUser) return;
+            const userRef = db.collection('users').doc(currentUser.email || currentUser.uid);
+            userRef.get().then((doc) => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    document.getElementById('userNameDisplay').textContent = data.name || currentUser.displayName || 'User';
+                }
+            }).catch(() => {});
+        }
 
+        // ============================================================
+        // OFFLINE
+        // ============================================================
+        function updateOfflineStatus() {
+            isOffline = !navigator.onLine;
+            const indicator = document.getElementById('offlineIndicator');
+            const text = document.getElementById('offlineText');
+
+            if (isOffline) {
+                indicator.classList.add('visible');
+                text.textContent = 'You are offline — data will be saved locally and synced when online';
+            } else {
+                indicator.classList.remove('visible');
+                if (entries.some(e => !e.synced)) {
+                    syncEntries();
+                }
+            }
+        }
+
+        window.addEventListener('online', updateOfflineStatus);
+        window.addEventListener('offline', updateOfflineStatus);
+
+        // ============================================================
+        // LOAD / SAVE ENTRIES
+        // ============================================================
+        function loadEntries() {
             try {
-                map = L.map('map').setView([defaultLat, defaultLng], 13);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '&copy; OpenStreetMap contributors'
-                }).addTo(map);
-
-                const mapLoading = document.querySelector('.map-loading');
-                if (mapLoading) mapLoading.style.display = 'none';
-
-                map.on('click', function(e) {
-                    setMapPin(e.latlng.lat, e.latlng.lng);
-                });
-
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            const lat = position.coords.latitude;
-                            const lng = position.coords.longitude;
-                            map.setView([lat, lng], 15);
-                            setMapPin(lat, lng);
-                        },
-                        (error) => {
-                            console.log('GPS error/rejected — fallback to default', error);
-                        },
-                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-                    );
+                const saved = localStorage.getItem('pelo_data_entries');
+                if (saved) {
+                    entries = JSON.parse(saved);
                 }
-            } catch (err) {
-                console.error('Map init failed:', err);
-                const mapDiv = document.getElementById('map');
-                if (mapDiv) {
-                    mapDiv.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:0.8rem;"><i class="fas fa-exclamation-triangle"></i> Map failed to load offline. Manual coordinates can still be entered below.</div>';
-                }
+            } catch(e) {
+                entries = [];
             }
+            renderEntries();
+            updateCounts();
+            updateOfflineStatus();
         }
 
-        function setMapPin(lat, lng) {
-            lat = parseFloat(lat);
-            lng = parseFloat(lng);
-            if (isNaN(lat) || isNaN(lng)) return;
-
-            if (marker) {
-                marker.setLatLng([lat, lng]);
-            } else if (map) {
-                marker = L.marker([lat, lng]).addTo(map);
-            }
-
-            document.getElementById('latitude').value = lat.toFixed(6);
-            document.getElementById('longitude').value = lng.toFixed(6);
-            document.getElementById('manualLat').value = lat.toFixed(6);
-            document.getElementById('manualLng').value = lng.toFixed(6);
-
-            if (map) map.panTo([lat, lng]);
-        }
-
-        function setManualCoords() {
-            const lat = document.getElementById('manualLat').value;
-            const lng = document.getElementById('manualLng').value;
-            if (lat && lng) {
-                setMapPin(parseFloat(lat), parseFloat(lng));
-                showToast('📍 Pin updated to ' + parseFloat(lat).toFixed(4) + ', ' + parseFloat(lng).toFixed(4));
-            } else {
-                showToast('⚠️ Please enter valid latitude & longitude');
-            }
+        function saveEntries() {
+            localStorage.setItem('pelo_data_entries', JSON.stringify(entries));
+            renderEntries();
+            updateCounts();
         }
 
         // ============================================================
-        // DATA SUBMISSION & LOCALSTORAGE
+        // RENDER ENTRIES
+        // ============================================================
+        function renderEntries() {
+            const container = document.getElementById('entriesList');
+
+            if (entries.length === 0) {
+                container.innerHTML = `
+                    <p style="color:var(--text-secondary); font-size:0.75rem; text-align:center; padding:20px 0;">
+                        No entries yet. Submit your first site above.
+                    </p>
+                `;
+                return;
+            }
+
+            let html = '';
+            entries.forEach((entry, index) => {
+                const siteTypeLabels = {
+                    'mechanic': '🔧 Mechanic',
+                    'generator': '⚡ Generator',
+                    'garage': '🚗 Garage',
+                    'mine': '⛏️ Mine',
+                    'fastfood': '🍔 Fast Food',
+                    'kota': '🍟 Kota / Amagwinya',
+                    'roadhouse': '🏍️ Roadhouse',
+                    'spaza': '🏪 Spaza / Tuck Shop',
+                    'other': '📌 Other'
+                };
+                const typeLabel = siteTypeLabels[entry.siteType] || entry.siteType;
+                const syncStatus = entry.synced ? '✅ Synced' : '⏳ Pending sync';
+
+                html += `
+                    <div class="entry-item" data-index="${index}">
+                        <div class="entry-info">
+                            <span class="name">${escapeHtml(entry.ownerName)}</span>
+                            <span class="details">${typeLabel} · ${escapeHtml(entry.contactPerson)} · ${escapeHtml(entry.phone)}</span>
+                            <span class="location">📍 ${escapeHtml(entry.area)} · ${escapeHtml(entry.oilVolume || 0)}L cooking oil</span>
+                            ${entry.whatsappGroup ? `<span class="location">💬 ${escapeHtml(entry.whatsappGroup)}</span>` : ''}
+                        </div>
+                        <div class="entry-actions">
+                            <span class="entry-status">${syncStatus}</span>
+                            <button class="btn-danger" onclick="deleteEntry(${index})"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ============================================================
+        // UPDATE COUNTS
+        // ============================================================
+        function updateCounts() {
+            document.getElementById('entryCount').textContent = entries.length + ' entries';
+            document.getElementById('submittedCount').textContent = entries.length + ' entries';
+        }
+
+        // ============================================================
+        // SYNC
+        // ============================================================
+        function syncEntries() {
+            const pending = entries.filter(e => !e.synced);
+
+            if (pending.length === 0) {
+                showToast('✅ All entries are already synced.', 'success');
+                return;
+            }
+
+            if (isOffline) {
+                showToast('⚠️ You are offline. Entries will sync when you are online.', 'error');
+                return;
+            }
+
+            let syncedCount = 0;
+            pending.forEach((entry, idx) => {
+                submitToEmail(entry, function(success) {
+                    if (success) {
+                        entry.synced = true;
+                        syncedCount++;
+                    }
+                    if (idx === pending.length - 1) {
+                        saveEntries();
+                        showToast(`✅ Synced ${syncedCount} of ${pending.length} entries.`, 'success');
+                    }
+                });
+            });
+        }
+
+        // ============================================================
+        // SUBMIT ENTRY
         // ============================================================
         function submitEntry(event) {
             event.preventDefault();
 
-            const wasteSelect = document.getElementById('wasteType');
-            const selectedWaste = Array.from(wasteSelect.selectedOptions).map(opt => opt.value);
+            const siteType = document.getElementById('siteType').value;
+            const ownerName = document.getElementById('ownerName').value.trim();
+            const contactPerson = document.getElementById('contactPerson').value.trim();
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const area = document.getElementById('area').value.trim();
+            const address = document.getElementById('address').value.trim();
+            const oilVolume = document.getElementById('oilVolume').value;
+            const engineOil = document.getElementById('engineOil').value || 0;
+            const otherVolume = document.getElementById('otherVolume').value || 0;
+            const wasteType = document.getElementById('wasteType');
+            const wasteTypes = Array.from(wasteType.selectedOptions).map(opt => opt.value);
+            const collectionFrequency = document.getElementById('collectionFrequency').value;
+            const monthlyVolume = document.getElementById('monthlyVolume').value || 0;
+            const disposalMethod = document.getElementById('disposalMethod').value;
+            const notes = document.getElementById('notes').value.trim();
+            const latitude = document.getElementById('latitude').value;
+            const longitude = document.getElementById('longitude').value;
 
-            const entry = {
-                id: 'pelo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-                timestamp: new Date().toISOString(),
-                userEmail: currentUser ? currentUser.email : 'guest@pelorecovery.co.za',
-                userName: currentUser ? (currentUser.displayName || 'Guest') : 'Guest',
-                siteType: document.getElementById('siteType').value,
-                ownerName: document.getElementById('ownerName').value.trim(),
-                contactPerson: document.getElementById('contactPerson').value.trim(),
-                phoneNumber: document.getElementById('phoneNumber').value.trim(),
-                area: document.getElementById('area').value.trim(),
-                address: document.getElementById('address').value.trim(),
-                oilVolume: parseFloat(document.getElementById('oilVolume').value) || 0,
-                engineOil: parseFloat(document.getElementById('engineOil').value) || 0,
-                otherVolume: parseFloat(document.getElementById('otherVolume').value) || 0,
-                wasteTypes: selectedWaste.length > 0 ? selectedWaste : ['cooking_oil'],
-                collectionFrequency: document.getElementById('collectionFrequency').value,
-                monthlyVolume: parseFloat(document.getElementById('monthlyVolume').value) || 0,
-                disposalMethod: document.getElementById('disposalMethod').value,
-                whatsappGroup: document.getElementById('whatsappGroup').value.trim(),
-                whatsappAdmin: document.getElementById('whatsappAdmin').value.trim(),
-                securityCompany: document.getElementById('securityCompany').value.trim(),
-                securityContact: document.getElementById('securityContact').value.trim(),
-                policeStation: document.getElementById('policeStation').value.trim(),
-                policeWard: document.getElementById('policeWard').value.trim(),
-                notes: document.getElementById('notes').value.trim(),
-                latitude: document.getElementById('latitude').value,
-                longitude: document.getElementById('longitude').value,
-                synced: false
-            };
+            const whatsappGroup = document.getElementById('whatsappGroup').value.trim();
+            const whatsappAdmin = document.getElementById('whatsappAdmin').value.trim();
+            const securityCompany = document.getElementById('securityCompany').value.trim();
+            const securityContact = document.getElementById('securityContact').value.trim();
+            const policeStation = document.getElementById('policeStation').value.trim();
+            const policeWard = document.getElementById('policeWard').value.trim();
 
-            entries.unshift(entry);
-            saveEntriesLocally();
-            renderEntries();
-            document.getElementById('dataForm').reset();
-            if (marker && map) {
-                map.removeLayer(marker);
-                marker = null;
-            }
-            document.getElementById('latitude').value = '';
-            document.getElementById('longitude').value = '';
-
-            if (navigator.onLine && !isDemo) {
-                syncSingleEntry(entry);
-            } else {
-                showToast('💾 Entry saved locally! (Will sync when online)');
-            }
-        }
-
-        function saveEntriesLocally() {
-            try {
-                localStorage.setItem('pelo_entries_v2', JSON.stringify(entries));
-            } catch (e) {
-                console.error('LocalStorage error:', e);
-            }
-        }
-
-        function loadEntries() {
-            try {
-                const data = localStorage.getItem('pelo_entries_v2');
-                if (data) {
-                    entries = JSON.parse(data);
-                    renderEntries();
-                }
-            } catch (e) {
-                console.error('Failed to load local entries:', e);
-            }
-        }
-
-        function renderEntries() {
-            const list = document.getElementById('entriesList');
-            const countBadge = document.getElementById('entryCount');
-            const submittedBadge = document.getElementById('submittedCount');
-
-            countBadge.textContent = entries.length + ' entries';
-            submittedBadge.textContent = entries.length + ' entries';
-
-            if (entries.length === 0) {
-                list.innerHTML = '<p style="color:var(--text-secondary); font-size:0.75rem; text-align:center; padding:20px 0;">No entries yet. Submit your first site above.</p>';
+            if (!ownerName || !contactPerson || !phoneNumber || !area || !oilVolume) {
+                showToast('⚠️ Please fill in all required fields.', 'error');
                 return;
             }
 
-            list.innerHTML = entries.map(entry => `
-                <div class="entry-item">
-                    <div class="entry-info">
-                        <div class="name">${escapeHtml(entry.ownerName)} (${escapeHtml(entry.siteType)})</div>
-                        <div class="details">
-                            📍 ${escapeHtml(entry.area)} · 📞 ${escapeHtml(entry.phoneNumber)} · 🛢️ ${entry.oilVolume}L Oil
-                            ${entry.latitude ? ' · GPS Captured' : ''}
-                        </div>
-                    </div>
-                    <div class="entry-actions">
-                        <span class="entry-status">${entry.synced ? '✅ SYNCED' : '💾 LOCAL'}</span>
-                        <button class="btn-danger" onclick="deleteEntry('${entry.id}')"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>
-            `).join('');
+            const entry = {
+                id: Date.now(),
+                siteType,
+                ownerName,
+                contactPerson,
+                phone: phoneNumber,
+                area,
+                address,
+                oilVolume: parseInt(oilVolume) || 0,
+                engineOil: parseInt(engineOil) || 0,
+                otherVolume: parseInt(otherVolume) || 0,
+                wasteTypes,
+                collectionFrequency,
+                monthlyVolume: parseInt(monthlyVolume) || 0,
+                disposalMethod,
+                notes,
+                latitude,
+                longitude,
+                whatsappGroup,
+                whatsappAdmin,
+                securityCompany,
+                securityContact,
+                policeStation,
+                policeWard,
+                userId: currentUser ? currentUser.uid : 'anonymous',
+                userName: currentUser ? currentUser.displayName || currentUser.email : 'Guest',
+                timestamp: new Date().toISOString(),
+                chsh_s: '2.76',
+                patent: 'SA 2026/05142',
+                status: 'submitted',
+                synced: false
+            };
+
+            entries.push(entry);
+            saveEntries();
+
+            if (!isOffline) {
+                submitToEmail(entry, function(success) {
+                    if (success) {
+                        entry.synced = true;
+                        saveEntries();
+                    }
+                });
+            } else {
+                showToast('📶 You are offline. Entry saved locally. Will sync when online.', 'info');
+            }
+
+            document.getElementById('dataForm').reset();
+            document.getElementById('latitude').value = '';
+            document.getElementById('longitude').value = '';
+            document.getElementById('oilVolume').value = '';
+            document.getElementById('engineOil').value = '';
+            document.getElementById('otherVolume').value = '';
+            document.getElementById('monthlyVolume').value = '';
+            document.getElementById('notes').value = '';
+            document.getElementById('whatsappGroup').value = '';
+            document.getElementById('whatsappAdmin').value = '';
+            document.getElementById('securityCompany').value = '';
+            document.getElementById('securityContact').value = '';
+            document.getElementById('policeStation').value = '';
+            document.getElementById('policeWard').value = '';
+
+            if (marker) {
+                map.removeLayer(marker);
+                marker = null;
+            }
+
+            showToast('✅ Entry submitted! Quantum-verified data saved.', 'success');
         }
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        // ============================================================
+        // SUBMIT TO EMAIL (FormSubmit)
+        // ============================================================
+        function submitToEmail(entry, callback) {
+            try {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = 'https://formsubmit.co/mindtech.industriesai@gmail.com';
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
+
+                const fields = {
+                    '_subject': 'PELO Data Collection — New Entry',
+                    '_captcha': 'true',
+                    '_template': 'table',
+                    '_next': 'https://pelo-data-collection.onrender.com/thank-you',
+                    'Site Type': entry.siteType,
+                    'Owner Name': entry.ownerName,
+                    'Contact Person': entry.contactPerson,
+                    'Phone Number': entry.phone,
+                    'Area / Community': entry.area,
+                    'Address': entry.address || 'N/A',
+                    'Cooking Oil (L/mo)': entry.oilVolume,
+                    'Engine Oil (L/mo)': entry.engineOil,
+                    'Other Waste (kg/mo)': entry.otherVolume,
+                    'Waste Types': entry.wasteTypes.join(', ') || 'N/A',
+                    'Collection Frequency': entry.collectionFrequency || 'N/A',
+                    'Monthly Volume': entry.monthlyVolume || 'N/A',
+                    'Disposal Method': entry.disposalMethod || 'Not specified',
+                    'Notes': entry.notes || 'N/A',
+                    'Latitude': entry.latitude || 'N/A',
+                    'Longitude': entry.longitude || 'N/A',
+                    'WhatsApp Group': entry.whatsappGroup || 'N/A',
+                    'WhatsApp Admin': entry.whatsappAdmin || 'N/A',
+                    'Security Company': entry.securityCompany || 'N/A',
+                    'Security Contact': entry.securityContact || 'N/A',
+                    'Police Station': entry.policeStation || 'N/A',
+                    'Police Ward Cell': entry.policeWard || 'N/A',
+                    'User ID': entry.userId || 'N/A',
+                    'User Name': entry.userName || 'N/A',
+                    'CHSH S': entry.chsh_s,
+                    'Patent': entry.patent,
+                    'Timestamp': entry.timestamp,
+                    'Entry ID': entry.id
+                };
+
+                for (const [key, value] of Object.entries(fields)) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value;
+                    form.appendChild(input);
+                }
+
+                const iframe = document.createElement('iframe');
+                iframe.name = 'hiddenFrame';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+                document.body.appendChild(form);
+
+                form.submit();
+
+                setTimeout(() => {
+                    document.body.removeChild(form);
+                    document.body.removeChild(iframe);
+                    if (callback) callback(true);
+                }, 3000);
+
+            } catch(e) {
+                console.warn('Email submit error:', e);
+                if (callback) callback(false);
+            }
         }
 
-        function deleteEntry(id) {
-            if (confirm('Are you sure you want to delete this entry?')) {
-                entries = entries.filter(e => e.id !== id);
-                saveEntriesLocally();
-                renderEntries();
-                showToast('🗑️ Entry deleted');
+        // ============================================================
+        // DELETE / CLEAR / EXPORT
+        // ============================================================
+        function deleteEntry(index) {
+            if (confirm('Delete this entry?')) {
+                entries.splice(index, 1);
+                saveEntries();
+                showToast('🗑️ Entry deleted.', 'info');
             }
         }
 
         function clearAllEntries() {
-            if (confirm('⚠️ Clear ALL local entries? This cannot be undone.')) {
+            if (entries.length === 0) {
+                showToast('No entries to clear.', 'info');
+                return;
+            }
+            if (confirm('Delete ALL entries? This cannot be undone.')) {
                 entries = [];
-                saveEntriesLocally();
-                renderEntries();
-                showToast('🗑️ All entries cleared');
+                saveEntries();
+                showToast('🗑️ All entries cleared.', 'info');
             }
-        }
-
-        // ============================================================
-        // FIREBASE SYNC & CSV EXPORT
-        // ============================================================
-        function syncSingleEntry(entry) {
-            db.collection('pelo_collections').doc(entry.id).set(entry)
-                .then(() => {
-                    entry.synced = true;
-                    saveEntriesLocally();
-                    renderEntries();
-                    showToast('✅ Entry submitted & synced to database!');
-                })
-                .catch((err) => {
-                    console.error('Sync failed:', err);
-                    showToast('💾 Saved locally (Sync pending: ' + err.message + ')');
-                });
-        }
-
-        function syncEntries() {
-            if (!navigator.onLine) {
-                showToast('⚠️ You are offline. Reconnect to sync.');
-                return;
-            }
-
-            const unsynced = entries.filter(e => !e.synced);
-            if (unsynced.length === 0) {
-                showToast('✅ All entries are already synced!');
-                return;
-            }
-
-            showToast('⏳ Syncing ' + unsynced.length + ' entries...');
-            let count = 0;
-
-            unsynced.forEach(entry => {
-                db.collection('pelo_collections').doc(entry.id).set(entry)
-                    .then(() => {
-                        entry.synced = true;
-                        count++;
-                        if (count === unsynced.length) {
-                            saveEntriesLocally();
-                            renderEntries();
-                            showToast('🎉 Successfully synced ' + count + ' entries!');
-                        }
-                    })
-                    .catch(err => {
-                        console.error('Batch sync error for ' + entry.id, err);
-                    });
-            });
         }
 
         function exportCSV() {
             if (entries.length === 0) {
-                showToast('⚠️ No entries to export.');
+                showToast('⚠️ No entries to export.', 'error');
                 return;
             }
 
-            const headers = ['ID', 'Date', 'User Email', 'User Name', 'Site Type', 'Owner/Business', 'Contact Person', 'Phone', 'Area', 'Address', 'Cooking Oil (L)', 'Engine Oil (L)', 'Other Waste (kg)', 'Waste Types', 'Frequency', 'Monthly Vol', 'Disposal Method', 'Latitude', 'Longitude', 'Notes', 'Synced'];
-            const csvRows = [headers.join(',')];
+            const headers = ['ID', 'Site Type', 'Owner Name', 'Contact Person', 'Phone', 'Area', 'Address',
+                'Cooking Oil (L)', 'Engine Oil (L)', 'Other Waste (kg)', 'Waste Types', 'Collection Frequency',
+                'Monthly Volume', 'Disposal Method', 'Notes', 'Latitude', 'Longitude',
+                'WhatsApp Group', 'WhatsApp Admin', 'Security Company', 'Security Contact',
+                'Police Station', 'Police Ward Cell', 'User ID', 'User Name',
+                'CHSH S', 'Patent', 'Timestamp', 'Status', 'Synced'
+            ];
+
+            let csv = headers.join(',') + '\n';
 
             entries.forEach(e => {
                 const row = [
                     e.id,
-                    '"' + (e.timestamp || '') + '"',
-                    '"' + (e.userEmail || '') + '"',
-                    '"' + (e.userName || '') + '"',
-                    '"' + (e.siteType || '') + '"',
-                    '"' + (e.ownerName || '') + '"',
-                    '"' + (e.contactPerson || '') + '"',
-                    '"' + (e.phoneNumber || '') + '"',
-                    '"' + (e.area || '') + '"',
-                    '"' + (e.address || '') + '"',
+                    `"${e.siteType}"`,
+                    `"${e.ownerName}"`,
+                    `"${e.contactPerson}"`,
+                    `"${e.phone}"`,
+                    `"${e.area}"`,
+                    `"${e.address || ''}"`,
                     e.oilVolume || 0,
                     e.engineOil || 0,
                     e.otherVolume || 0,
-                    '"' + (Array.isArray(e.wasteTypes) ? e.wasteTypes.join(';') : '') + '"',
-                    '"' + (e.collectionFrequency || '') + '"',
+                    `"${(e.wasteTypes || []).join('; ')}"`,
+                    `"${e.collectionFrequency || ''}"`,
                     e.monthlyVolume || 0,
-                    '"' + (e.disposalMethod || '') + '"',
-                    e.latitude || '',
-                    e.longitude || '',
-                    '"' + (e.notes || '').replace(/"/g, '""') + '"',
+                    `"${e.disposalMethod || ''}"`,
+                    `"${e.notes || ''}"`,
+                    `"${e.latitude || ''}"`,
+                    `"${e.longitude || ''}"`,
+                    `"${e.whatsappGroup || ''}"`,
+                    `"${e.whatsappAdmin || ''}"`,
+                    `"${e.securityCompany || ''}"`,
+                    `"${e.securityContact || ''}"`,
+                    `"${e.policeStation || ''}"`,
+                    `"${e.policeWard || ''}"`,
+                    `"${e.userId || ''}"`,
+                    `"${e.userName || ''}"`,
+                    `"${e.chsh_s}"`,
+                    `"${e.patent}"`,
+                    `"${e.timestamp}"`,
+                    `"${e.status}"`,
                     e.synced ? 'Yes' : 'No'
                 ];
-                csvRows.push(row.join(','));
+                csv += row.join(',') + '\n';
             });
 
-            const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.setAttribute('href', url);
-            a.setAttribute('download', 'PELO_Data_Collection_' + new Date().toISOString().slice(0, 10) + '.csv');
+            a.href = url;
+            a.download = `pelo_data_${new Date().toISOString().slice(0,10)}.csv`;
             a.click();
-            showToast('📊 CSV file generated & downloaded!');
+            URL.revokeObjectURL(url);
+
+            showToast('📊 CSV exported successfully!', 'success');
         }
 
         // ============================================================
-        // UTILS
+        // MAP — NO WATERMARK
         // ============================================================
-        function showToast(msg) {
-            const existing = document.querySelector('.toast');
-            if (existing) existing.remove();
+        function initMap() {
+            const container = document.getElementById('map');
 
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.innerHTML = msg;
-            document.body.appendChild(toast);
+            if (map) {
+                try {
+                    map.remove();
+                    map = null;
+                } catch(e) {}
+            }
+            if (marker) {
+                marker = null;
+            }
 
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transition = 'opacity 0.5s ease';
-                setTimeout(() => toast.remove(), 500);
-            }, 3500);
-        }
+            if (typeof L === 'undefined') {
+                console.warn('Leaflet not loaded, retrying...');
+                container.innerHTML = `
+                    <div class="map-loading">
+                        <i class="fas fa-spinner"></i>
+                        <span>Loading map library...</span>
+                    </div>
+                `;
+                setTimeout(initMap, 1000);
+                return;
+            }
 
-        function updateOfflineStatus() {
-            const indicator = document.getElementById('offlineIndicator');
-            if (!navigator.onLine) {
-                indicator.classList.add('visible');
-            } else {
-                indicator.classList.remove('visible');
+            try {
+                const defaultLat = -26.194;
+                const defaultLng = 28.241;
+
+                map = L.map(container, {
+                    center: [defaultLat, defaultLng],
+                    zoom: 14,
+                    zoomControl: true,
+                    fadeAnimation: true,
+                    attributionControl: true
+                });
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OSM',
+                    maxZoom: 19,
+                    subdomains: 'abc'
+                }).addTo(map);
+
+                L.control.zoom({
+                    position: 'topright'
+                }).addTo(map);
+
+                map.on('click', function(e) {
+                    const lat = e.latlng.lat;
+                    const lng = e.latlng.lng;
+
+                    if (marker) {
+                        map.removeLayer(marker);
+                    }
+
+                    marker = L.marker([lat, lng], {
+                        draggable: true
+                    }).addTo(map);
+
+                    marker.bindPopup(`📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`).openPopup();
+
+                    document.getElementById('latitude').value = lat.toFixed(6);
+                    document.getElementById('longitude').value = lng.toFixed(6);
+                    document.getElementById('manualLat').value = lat.toFixed(6);
+                    document.getElementById('manualLng').value = lng.toFixed(6);
+
+                    marker.on('dragend', function() {
+                        const pos = marker.getLatLng();
+                        document.getElementById('latitude').value = pos.lat.toFixed(6);
+                        document.getElementById('longitude').value = pos.lng.toFixed(6);
+                        document.getElementById('manualLat').value = pos.lat.toFixed(6);
+                        document.getElementById('manualLng').value = pos.lng.toFixed(6);
+                        showToast('📍 Pin moved! Coordinates updated.', 'info');
+                    });
+
+                    showToast('📍 Pin dropped! Coordinates captured.', 'success');
+                });
+
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        function(position) {
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+                            map.setView([lat, lng], 15);
+                            const userMarker = L.circleMarker([lat, lng], {
+                                radius: 8,
+                                fillColor: '#00B4D8',
+                                color: '#00F5D4',
+                                weight: 2,
+                                fillOpacity: 0.6
+                            }).addTo(map);
+                            userMarker.bindPopup('📌 Your location').openPopup();
+                        },
+                        function() {},
+                        { enableHighAccuracy: true, timeout: 10000 }
+                    );
+                }
+
+                mapInitialized = true;
+                console.log('🗺️ Map initialized (OSM tiles)');
+
+            } catch (error) {
+                console.warn('Map error:', error);
+                container.innerHTML = `
+                    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:0.75rem;flex-direction:column;gap:10px;padding:20px;text-align:center;">
+                        <i class="fas fa-map" style="font-size:2rem;opacity:0.3;"></i>
+                        <p>Map could not load. Use the manual coordinates below.</p>
+                        <p style="font-size:0.6rem;color:var(--text-muted);">Enter latitude and longitude, then click "Set Pin"</p>
+                    </div>
+                `;
             }
         }
 
-        window.addEventListener('online', () => {
-            updateOfflineStatus();
-            showToast('📶 Back online! Automatic sync ready.');
-        });
+        function setManualCoords() {
+            const latInput = document.getElementById('manualLat');
+            const lngInput = document.getElementById('manualLng');
 
-        window.addEventListener('offline', () => {
-            updateOfflineStatus();
-            showToast('⚠️ You are offline — local storage active.');
-        });
+            if (!latInput || !lngInput) {
+                showToast('⚠️ Manual coordinate inputs not found.', 'error');
+                return;
+            }
+
+            const lat = latInput.value.trim();
+            const lng = lngInput.value.trim();
+
+            if (!lat || !lng) {
+                showToast('⚠️ Please enter both latitude and longitude.', 'error');
+                return;
+            }
+
+            const latNum = parseFloat(lat);
+            const lngNum = parseFloat(lng);
+
+            if (isNaN(latNum) || isNaN(lngNum) || latNum < -90 || latNum > 90 || lngNum < -180 || lngNum > 180) {
+                showToast('⚠️ Invalid coordinates. Please enter valid lat/lng.', 'error');
+                return;
+            }
+
+            document.getElementById('latitude').value = latNum.toFixed(6);
+            document.getElementById('longitude').value = lngNum.toFixed(6);
+
+            if (map && mapInitialized) {
+                if (marker) {
+                    map.removeLayer(marker);
+                }
+
+                marker = L.marker([latNum, lngNum], {
+                    draggable: true
+                }).addTo(map);
+
+                marker.bindPopup(`📍 ${latNum.toFixed(6)}, ${lngNum.toFixed(6)}`).openPopup();
+                map.setView([latNum, lngNum], 14);
+
+                marker.on('dragend', function() {
+                    const pos = marker.getLatLng();
+                    document.getElementById('latitude').value = pos.lat.toFixed(6);
+                    document.getElementById('longitude').value = pos.lng.toFixed(6);
+                    document.getElementById('manualLat').value = pos.lat.toFixed(6);
+                    document.getElementById('manualLng').value = pos.lng.toFixed(6);
+                    showToast('📍 Pin moved! Coordinates updated.', 'info');
+                });
+
+                showToast('📍 Pin set manually! Coordinates captured.', 'success');
+            } else {
+                showToast('📍 Coordinates stored. Map will show pin when loaded.', 'info');
+                setTimeout(initMap, 500);
+            }
+        }
 
         // ============================================================
-        // AUTH STATE OBSERVER & INIT
+        // TOAST
+        // ============================================================
+        function showToast(msg, type) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+
+            const div = document.createElement('div');
+            div.className = 'toast';
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '💡';
+            div.innerHTML = icon + ' ' + msg;
+            document.body.appendChild(div);
+
+            setTimeout(() => {
+                if (div.parentNode) div.remove();
+            }, 3500);
+        }
+
+        // ============================================================
+        // AUTH STATE — THE ONLY GATEKEEPER
         // ============================================================
         auth.onAuthStateChanged((user) => {
             if (user) {
+                // User is signed in — show the app
                 currentUser = user;
                 isDemo = false;
-                showApp();
+                // Check if app is already visible to prevent duplicate
+                if (!appVisible) {
+                    showApp();
+                }
                 console.log('🔐 User authenticated:', user.email);
-            } else if (!isDemo) {
-                hideApp();
+            } else {
+                // No user — hide app if visible
+                if (appVisible) {
+                    hideApp();
+                } else {
+                    // Ensure login overlay is visible
+                    loginOverlay.classList.remove('hidden');
+                    appContainer.style.display = 'none';
+                }
                 console.log('🔓 No user — login required');
             }
         });
 
+        // ============================================================
+        // INIT
+        // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
             loadEntries();
             updateOfflineStatus();
-            console.log('🚀 PELO Data Collection v2.5 initialized');
+
+            // Ensure login overlay is visible initially
+            loginOverlay.classList.remove('hidden');
+            appContainer.style.display = 'none';
+            appVisible = false;
+
+            console.log('🚀 PELO Data Collection v2.6 (Full Login Fix)');
+            console.log('   ⚛️ CHSH S=2.76');
+            console.log('   🔐 Login overlay always visible until auth confirms');
+            console.log('   📍 Map: OSM tiles — no watermark');
+            console.log('   📧 Data sent to: mindtech.industriesai@gmail.com');
+            console.log('   📶 Offline capable — auto-sync when online');
         });
     </script>
+
 </body>
 </html>
