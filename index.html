@@ -53,15 +53,22 @@
             overflow-x: hidden;
         }
 
-        /* ===== LOADING SCREEN ===== */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ============================================================
+           LOADING SCREEN — ALWAYS FIRST
+        ============================================================ */
         #loadingScreen {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--dark-bg);
+            inset: 0;
             z-index: 99999;
+            background: var(--dark-bg);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -78,38 +85,32 @@
         #loadingScreen .spinner {
             width: 48px;
             height: 48px;
-            border: 3px solid var(--glass-border);
+            border: 3px solid rgba(200,164,80,0.1);
             border-top-color: var(--pelo-gold);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-        }
-
-        #loadingScreen .loading-text {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            font-family: var(--font-mono);
-            letter-spacing: 3px;
-            animation: pulse 1.5s ease-in-out infinite;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        @keyframes pulse {
+        #loadingScreen .loading-text {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            letter-spacing: 4px;
+            animation: pulseText 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulseText {
             0%, 100% { opacity: 0.4; }
             50% { opacity: 1; }
         }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 16px;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* ===== LOGIN OVERLAY — ALWAYS ON TOP ===== */
+        /* ============================================================
+           LOGIN OVERLAY — FIXED
+        ============================================================ */
         #loginOverlay {
             position: fixed;
             top: 0;
@@ -119,22 +120,52 @@
             background: rgba(5,8,15,0.98);
             backdrop-filter: blur(28px);
             -webkit-backdrop-filter: blur(28px);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            z-index: 9998;
             padding: 20px;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
             transition: opacity 0.6s ease, visibility 0.6s ease;
+            /* Default: hidden */
+            display: none !important;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        #loginOverlay.visible {
+            display: flex !important;
+            opacity: 1;
+            visibility: visible;
         }
 
         #loginOverlay.hidden {
+            display: none !important;
             opacity: 0;
             visibility: hidden;
-            pointer-events: none;
         }
 
-        /* ===== REGISTER MODAL ===== */
+        /* ============================================================
+           APP CONTAINER — FIXED
+        ============================================================ */
+        #appContainer {
+            display: none !important;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+        }
+
+        #appContainer.visible {
+            display: block !important;
+            opacity: 1;
+        }
+
+        #appContainer.hidden {
+            display: none !important;
+            opacity: 0;
+        }
+
+        /* ============================================================
+           REGISTER MODAL
+        ============================================================ */
         #registerModal {
             display: none;
             position: fixed;
@@ -770,9 +801,9 @@
     </div>
 
     <!-- ============================================================
-    MAIN APP — HIDDEN BY DEFAULT
+    MAIN APP
     ============================================================ -->
-    <div id="appContainer" class="container" style="display:none;">
+    <div id="appContainer" class="container">
 
         <!-- HEADER -->
         <header class="header">
@@ -1010,7 +1041,7 @@
     </div>
 
     <!-- ============================================================
-    JAVASCRIPT — GEMINI APPROACH: LOADING STATE FIRST
+    JAVASCRIPT — HYBRID APPROACH FIXED
     ============================================================ -->
     <script>
         // ============================================================
@@ -1041,7 +1072,7 @@
         let mapInitialized = false;
         let appVisible = false;
         let isSubmitting = false;
-        let authResolved = false;
+        let authReady = false;
         let mapRetryCount = 0;
         const MAX_MAP_RETRIES = 5;
 
@@ -1054,66 +1085,58 @@
         const loginError = document.getElementById('loginError');
 
         // ============================================================
-        // CORE AUTH HANDLER — THE GATEKEEPER
+        // SCREEN MANAGEMENT
+        // ============================================================
+        function showScreen(screen) {
+            // Hide all screens
+            loadingScreen.classList.add('hidden');
+            loginOverlay.classList.remove('visible');
+            loginOverlay.classList.add('hidden');
+            appContainer.classList.remove('visible');
+            appContainer.classList.add('hidden');
+
+            // Show the requested screen
+            if (screen === 'loading') {
+                loadingScreen.classList.remove('hidden');
+            } else if (screen === 'login') {
+                loginOverlay.classList.remove('hidden');
+                loginOverlay.classList.add('visible');
+            } else if (screen === 'app') {
+                appContainer.classList.remove('hidden');
+                appContainer.classList.add('visible');
+            }
+        }
+
+        // ============================================================
+        // AUTH HANDLER — THE GATEKEEPER
         // ============================================================
         function handleAuth(user) {
-            authResolved = true;
-            
-            // Hide loading screen first
-            loadingScreen.classList.add('hidden');
+            authReady = true;
             
             if (user) {
                 // User is signed in
                 currentUser = user;
                 isDemo = false;
-                if (!appVisible) {
-                    showApp();
-                }
+                showScreen('app');
+                appVisible = true;
+                
+                const displayName = currentUser.displayName || currentUser.email || 'Guest';
+                document.getElementById('userNameDisplay').textContent = displayName;
+                loginError.textContent = '';
+                
+                loadEntries();
+                loadUserData();
+                setTimeout(initMap, 600);
+                
                 console.log('🔐 User authenticated:', user.email || user.uid);
             } else {
                 // No user — show login
-                if (appVisible) {
-                    hideApp();
-                } else {
-                    // Ensure login overlay is shown
-                    loginOverlay.classList.remove('hidden');
-                    appContainer.style.display = 'none';
-                    appVisible = false;
-                }
+                currentUser = null;
+                isDemo = false;
+                appVisible = false;
+                showScreen('login');
                 console.log('🔓 No user — login required');
             }
-        }
-
-        // ============================================================
-        // SHOW APP
-        // ============================================================
-        function showApp() {
-            if (appVisible) return;
-            appVisible = true;
-            loginOverlay.classList.add('hidden');
-            appContainer.style.display = 'block';
-            
-            const displayName = currentUser.displayName || currentUser.email || 'Guest';
-            document.getElementById('userNameDisplay').textContent = displayName;
-            loginError.textContent = '';
-            
-            loadEntries();
-            loadUserData();
-            
-            // Initialize map after a delay
-            setTimeout(initMap, 600);
-            
-            console.log('✅ App shown for user:', currentUser ? currentUser.email : 'demo');
-        }
-
-        // ============================================================
-        // HIDE APP
-        // ============================================================
-        function hideApp() {
-            appVisible = false;
-            loginOverlay.classList.remove('hidden');
-            appContainer.style.display = 'none';
-            console.log('🔒 App hidden — login required');
         }
 
         // ============================================================
@@ -1155,15 +1178,22 @@
                 metadata: { creationTime: new Date().toISOString() }
             };
             
-            // Simulate auth resolution
-            if (!authResolved) {
-                loadingScreen.classList.add('hidden');
-                authResolved = true;
+            // Simulate auth resolution if not ready
+            if (!authReady) {
+                authReady = true;
             }
             
             currentUser = demoUser;
             isDemo = true;
-            showApp();
+            showScreen('app');
+            appVisible = true;
+            
+            document.getElementById('userNameDisplay').textContent = 'Guest User';
+            loginError.textContent = '';
+            
+            loadEntries();
+            setTimeout(initMap, 600);
+            
             showToast('👋 Welcome, Guest! Your data is saved locally.');
             
             btn.disabled = false;
@@ -1209,9 +1239,8 @@
                 closeRegister();
                 
                 // Simulate auth resolution if needed
-                if (!authResolved) {
-                    loadingScreen.classList.add('hidden');
-                    authResolved = true;
+                if (!authReady) {
+                    authReady = true;
                 }
                 
                 const registeredUser = {
@@ -1223,7 +1252,15 @@
                 
                 currentUser = registeredUser;
                 isDemo = true;
-                showApp();
+                showScreen('app');
+                appVisible = true;
+                
+                document.getElementById('userNameDisplay').textContent = name;
+                loginError.textContent = '';
+                
+                loadEntries();
+                setTimeout(initMap, 600);
+                
                 showToast('✅ Account created! Welcome, ' + name + '!');
             })
             .catch((error) => {
@@ -1240,7 +1277,8 @@
             if (isDemo) {
                 currentUser = null;
                 isDemo = false;
-                hideApp();
+                appVisible = false;
+                showScreen('login');
                 showToast('👋 Logged out.');
                 return;
             }
@@ -1249,14 +1287,16 @@
                 .then(() => {
                     currentUser = null;
                     isDemo = false;
-                    hideApp();
+                    appVisible = false;
+                    showScreen('login');
                     showToast('👋 Logged out.');
                 })
                 .catch((error) => {
                     // Fallback logout
                     currentUser = null;
                     isDemo = false;
-                    hideApp();
+                    appVisible = false;
+                    showScreen('login');
                     showToast('👋 Logged out.');
                     console.warn('Logout error:', error);
                 });
@@ -1938,22 +1978,20 @@
             handleAuth(user);
         });
 
-        // CRITICAL: Fallback if Firebase auth doesn't resolve quickly
-        // This prevents the app from hanging on loading screen
+        // ============================================================
+        // TIMEOUT FALLBACK — prevents infinite loading
+        // ============================================================
         let authCheckInterval = 0;
-        const maxWaitTime = 4000; // 4 seconds max wait
+        const MAX_WAIT_TIME = 4000; // 4 seconds max wait
         
         function checkAuthTimeout() {
-            authCheckInterval++;
-            if (authCheckInterval * 100 > maxWaitTime) {
-                // Auth hasn't resolved - show login
-                if (!authResolved) {
-                    console.warn('⚠️ Auth timeout after ' + maxWaitTime + 'ms — showing login');
-                    loadingScreen.classList.add('hidden');
-                    loginOverlay.classList.remove('hidden');
-                    appContainer.style.display = 'none';
-                    appVisible = false;
-                    authResolved = true;
+            authCheckInterval += 100;
+            if (authCheckInterval >= MAX_WAIT_TIME) {
+                // Auth hasn't resolved — show login
+                if (!authReady) {
+                    console.warn('⚠️ Auth timeout after ' + MAX_WAIT_TIME + 'ms — showing login');
+                    showScreen('login');
+                    authReady = true;
                 }
             } else {
                 setTimeout(checkAuthTimeout, 100);
@@ -1970,13 +2008,17 @@
             loadEntries();
             updateOfflineStatus();
 
-            console.log('🚀 PELO Data Collection v3.0 (Gemini Login Fix)');
+            // Show loading initially
+            showScreen('loading');
+
+            console.log('🚀 PELO Data Collection v3.0 (Hybrid Login Fix)');
             console.log('   ⚛️ CHSH S=2.76');
             console.log('   🔐 Loading screen prevents login flash');
-            console.log('   ⏱️ Auth timeout: ' + maxWaitTime + 'ms');
+            console.log('   ⏱️ Auth timeout: ' + MAX_WAIT_TIME + 'ms');
             console.log('   📍 Map: OSM tiles — no watermark');
             console.log('   📧 Data sent to: mindtech.industriesai@gmail.com');
             console.log('   📶 Offline capable — auto-sync when online');
+            console.log('   🔄 Map retry: ' + MAX_MAP_RETRIES + ' attempts');
         });
     </script>
 
