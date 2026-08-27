@@ -8,16 +8,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Leaflet CSS - Primary CDN -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet CSS - Fallback CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <style>
+        /* ===== RESET & BASE ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
@@ -32,7 +35,6 @@
             --dark-bg: #05080F;
             --dark-card: #0A0F1A;
             --glass-border: rgba(0,180,216,0.15);
-            --glass-border-light: rgba(0,180,216,0.08);
             --text-primary: #E8EDF5;
             --text-secondary: #8A99B0;
             --text-muted: #4A5A6A;
@@ -77,11 +79,7 @@
             flex-direction: column;
             transition: opacity 0.6s ease;
         }
-
-        #loginOverlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
+        #loginOverlay.hidden { opacity: 0; pointer-events: none; }
 
         @keyframes glassPulse {
             0% { border-color: rgba(0,180,216,0.2); box-shadow: 0 0 0 0 rgba(0,180,216,0.05); }
@@ -139,7 +137,6 @@
             color: var(--text-muted);
             font-size: 0.6rem;
         }
-
         .login-divider::before,
         .login-divider::after {
             content: "";
@@ -171,17 +168,9 @@
             gap: 12px;
             margin-top: 12px;
         }
+        .btn-login:hover { transform: translateY(-2px); filter: brightness(1.05); }
 
-        .btn-login:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.05);
-        }
-
-        .btn-google {
-            background: #4285F4;
-            color: white;
-            box-shadow: 0 4px 15px rgba(66,133,244,0.3);
-        }
+        .btn-google { background: #4285F4; color: white; box-shadow: 0 4px 15px rgba(66,133,244,0.3); }
         .btn-google:hover { box-shadow: 0 8px 25px rgba(66,133,244,0.5); }
 
         .btn-demo {
@@ -196,10 +185,7 @@
             color: var(--text-primary);
             border: 1px solid var(--glass-border);
         }
-        .btn-register:hover {
-            background: rgba(255,255,255,0.12);
-            border-color: var(--pelo-gold);
-        }
+        .btn-register:hover { background: rgba(255,255,255,0.12); border-color: var(--pelo-gold); }
 
         .btn-logout {
             background: rgba(239,71,111,0.15);
@@ -214,7 +200,7 @@
         }
         .btn-logout:hover { background: rgba(239,71,111,0.25); }
 
-        /* ===== HEADER WITH LOGO ===== */
+        /* ===== HEADER ===== */
         .header {
             display: flex;
             align-items: center;
@@ -235,10 +221,7 @@
             flex-shrink: 0;
         }
 
-        .header-text {
-            flex: 1;
-        }
-
+        .header-text { flex: 1; }
         .header-text h1 {
             font-size: 1.1rem;
             font-weight: 800;
@@ -247,7 +230,6 @@
             background-clip: text;
             color: transparent;
         }
-
         .header-text p {
             font-size: 0.5rem;
             color: var(--text-secondary);
@@ -274,7 +256,6 @@
             font-size: 0.65rem;
             color: var(--text-secondary);
         }
-
         .header-user .avatar {
             width: 28px;
             height: 28px;
@@ -286,12 +267,6 @@
             font-size: 0.6rem;
             color: white;
             overflow: hidden;
-        }
-
-        .header-user .avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
         }
 
         /* ===== GLASS CARD ===== */
@@ -368,7 +343,6 @@
 
         .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-        .form-row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
 
         .form-section-title {
             font-size: 0.7rem;
@@ -386,18 +360,27 @@
         /* ===== MAP ===== */
         #map {
             width: 100%;
-            height: 260px;
+            height: 280px;
             border-radius: 14px;
             overflow: hidden;
             border: 1px solid var(--glass-border);
             margin: 10px 0 14px;
             background: #0A0F1A;
+            position: relative;
         }
+
         #map .leaflet-control-attribution {
             background: rgba(5,8,15,0.8);
             color: var(--text-secondary);
             font-size: 0.45rem;
         }
+
+        #map .leaflet-control-zoom a {
+            background: rgba(5,8,15,0.8);
+            color: var(--text-primary);
+            border-color: var(--glass-border);
+        }
+
         .map-hint {
             font-size: 0.6rem;
             color: var(--text-secondary);
@@ -405,6 +388,56 @@
             margin-top: 4px;
         }
         .map-hint i { color: var(--pelo-gold); }
+
+        .map-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .map-loading i {
+            font-size: 2rem;
+            opacity: 0.3;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .map-manual-coords {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 8px;
+        }
+
+        .map-manual-coords input {
+            padding: 6px 10px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: white;
+            width: 120px;
+            font-size: 0.75rem;
+        }
+
+        .map-manual-coords button {
+            padding: 6px 16px;
+            background: var(--pelo-gold);
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-weight: 600;
+            cursor: pointer;
+        }
 
         /* ===== BUTTONS ===== */
         .btn-primary {
@@ -425,7 +458,6 @@
             gap: 10px;
         }
         .btn-primary:hover { transform: scale(1.01); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
         .btn-secondary {
             padding: 8px 16px;
@@ -453,7 +485,7 @@
         }
         .btn-danger:hover { background: rgba(239,71,111,0.25); }
 
-        /* ===== SUBMITTED ENTRIES ===== */
+        /* ===== ENTRIES ===== */
         .entries-list {
             margin-top: 12px;
             max-height: 300px;
@@ -470,15 +502,9 @@
             border-left: 3px solid var(--pelo-gold);
             font-size: 0.75rem;
         }
-        .entry-item .entry-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            flex: 1;
-        }
+        .entry-item .entry-info { flex: 1; }
         .entry-item .entry-info .name { font-weight: 600; color: var(--text-primary); }
         .entry-item .entry-info .details { font-size: 0.6rem; color: var(--text-secondary); }
-        .entry-item .entry-info .location { font-size: 0.55rem; color: var(--text-muted); font-family: var(--font-mono); }
         .entry-item .entry-actions { display: flex; gap: 6px; align-items: center; }
         .entry-item .entry-status {
             font-size: 0.45rem;
@@ -489,7 +515,7 @@
             font-family: var(--font-mono);
         }
 
-        /* ===== OFFLINE INDICATOR ===== */
+        /* ===== OFFLINE ===== */
         .offline-indicator {
             display: none;
             align-items: center;
@@ -503,7 +529,6 @@
             margin-bottom: 12px;
         }
         .offline-indicator.visible { display: flex; }
-        .offline-indicator i { font-size: 0.9rem; }
 
         /* ===== TOAST ===== */
         .toast {
@@ -537,7 +562,6 @@
             margin-top: 20px;
             border-top: 1px solid var(--glass-border);
         }
-
         .footer-logos {
             display: flex;
             justify-content: center;
@@ -546,20 +570,14 @@
             flex-wrap: wrap;
             margin-bottom: 12px;
         }
-
         .footer-logo {
             height: 40px;
             width: auto;
             opacity: 0.7;
             transition: all 0.3s;
-            filter: drop-shadow(0 0 8px rgba(0,180,216,0.05));
             object-fit: contain;
         }
-        .footer-logo:hover {
-            opacity: 1;
-            transform: scale(1.05);
-            filter: drop-shadow(0 0 12px rgba(0,180,216,0.15));
-        }
+        .footer-logo:hover { opacity: 1; transform: scale(1.05); }
 
         .quantum-line {
             font-family: var(--font-mono);
@@ -568,7 +586,6 @@
             letter-spacing: 2px;
             opacity: 0.4;
         }
-
         .footer .copyright {
             font-size: 0.5rem;
             color: var(--text-secondary);
@@ -580,12 +597,10 @@
             .container { padding: 10px; }
             .form-row-2 { grid-template-columns: 1fr; }
             .form-row-3 { grid-template-columns: 1fr 1fr; }
-            .form-row-4 { grid-template-columns: 1fr 1fr; }
             .header { flex-wrap: wrap; }
             .header-badge { margin-left: 0; }
             .glass-card { padding: 16px; }
             #map { height: 200px; }
-            .entry-item { flex-wrap: wrap; gap: 6px; }
             .header-logo { height: 40px; }
             .footer-logo { height: 32px; }
             .login-card { padding: 28px 20px; }
@@ -594,13 +609,11 @@
 
         @media (max-width: 480px) {
             .form-row-3 { grid-template-columns: 1fr; }
-            .form-row-4 { grid-template-columns: 1fr; }
             .header-logo { height: 36px; }
             .header-text h1 { font-size: 0.9rem; }
             .header-badge { font-size: 0.45rem; padding: 2px 10px; }
             .login-title { font-size: 1.3rem; }
             .footer-logo { height: 28px; }
-            .footer-logos { gap: 16px; }
         }
     </style>
 </head>
@@ -634,9 +647,9 @@
     </div>
 
     <!-- ============================================================
-    REGISTRATION MODAL (Hidden by default)
+    REGISTRATION MODAL
     ============================================================ -->
-    <div id="registerModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(5,8,15,0.95); backdrop-filter:blur(20px); z-index:10000; display:none; align-items:center; justify-content:center; padding:20px;">
+    <div id="registerModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(5,8,15,0.95); backdrop-filter:blur(20px); z-index:10000; align-items:center; justify-content:center; padding:20px; display:none;">
         <div class="login-card" style="max-width:400px;">
             <h2 style="font-size:1.3rem; margin-bottom:16px; color:var(--pelo-gold);">Create Account</h2>
             <form id="registerForm" onsubmit="registerUser(event)">
@@ -672,7 +685,7 @@
     ============================================================ -->
     <div id="appContainer" class="container" style="display:none;">
 
-        <!-- ===== HEADER WITH LOGO ===== -->
+        <!-- HEADER -->
         <header class="header">
             <img src="https://i.postimg.cc/KvmJMsTk/pelo-transparent-logo.png" alt="PELO Recovery Centre" class="header-logo" onerror="this.src='https://i.postimg.cc/T114NczG/pelo-recovery-image-removebg-preview.png'">
             <div class="header-text">
@@ -686,13 +699,13 @@
             </div>
         </header>
 
-        <!-- ===== OFFLINE INDICATOR ===== -->
+        <!-- OFFLINE INDICATOR -->
         <div class="offline-indicator" id="offlineIndicator">
             <i class="fas fa-wifi"></i>
             <span id="offlineText">You are offline — data will be saved locally and synced when online</span>
         </div>
 
-        <!-- ===== MAIN FORM ===== -->
+        <!-- MAIN FORM -->
         <div class="glass-card">
             <div class="card-header">
                 <i class="fas fa-clipboard-list"></i>
@@ -701,7 +714,6 @@
             </div>
 
             <form id="dataForm" onsubmit="submitEntry(event)">
-                <!-- Site Type -->
                 <div class="form-group">
                     <label>Site Type <span class="required">*</span></label>
                     <select id="siteType" required>
@@ -717,13 +729,11 @@
                     </select>
                 </div>
 
-                <!-- Business / Owner Name -->
                 <div class="form-group">
                     <label>Business / Owner Name <span class="required">*</span></label>
                     <input type="text" id="ownerName" placeholder="e.g. Watville Auto Repairs" required>
                 </div>
 
-                <!-- Contact Person -->
                 <div class="form-row-2">
                     <div class="form-group">
                         <label>Contact Person <span class="required">*</span></label>
@@ -735,19 +745,16 @@
                     </div>
                 </div>
 
-                <!-- Location -->
                 <div class="form-group">
                     <label>Area / Community <span class="required">*</span></label>
-                    <input type="text" id="area" placeholder="e.g. Watville, Daveyton, eMalahleni" required>
+                    <input type="text" id="area" placeholder="e.g. Watville, Daveyton" required>
                 </div>
 
-                <!-- Address -->
                 <div class="form-group">
                     <label>Full Address / GPS</label>
                     <input type="text" id="address" placeholder="Street address or GPS coordinates">
                 </div>
 
-                <!-- Volume Estimate -->
                 <div class="form-row-3">
                     <div class="form-group">
                         <label>Cooking Oil (L) <span class="required">*</span></label>
@@ -763,7 +770,6 @@
                     </div>
                 </div>
 
-                <!-- Waste Types -->
                 <div class="form-group">
                     <label>Waste Type(s) Collected</label>
                     <select id="wasteType" multiple style="height:80px;">
@@ -778,10 +784,9 @@
                         <option value="ewaste">💻 Electronic Waste</option>
                         <option value="other">📌 Other</option>
                     </select>
-                    <span style="font-size:0.55rem; color:var(--text-muted);">Hold Ctrl (Cmd) to select multiple</span>
+                    <span style="font-size:0.5rem; color:var(--text-muted);">Hold Ctrl (Cmd) to select multiple</span>
                 </div>
 
-                <!-- Collection Frequency -->
                 <div class="form-row-2">
                     <div class="form-group">
                         <label>Collection Frequency</label>
@@ -793,12 +798,11 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Estimated Monthly Volume (L/kg)</label>
+                        <label>Monthly Volume (L/kg)</label>
                         <input type="number" id="monthlyVolume" placeholder="e.g. 500" min="0">
                     </div>
                 </div>
 
-                <!-- Current Disposal -->
                 <div class="form-group">
                     <label>Current Disposal Method</label>
                     <select id="disposalMethod">
@@ -846,23 +850,30 @@
                     </div>
                 </div>
 
-                <!-- Notes -->
                 <div class="form-group">
                     <label>Notes / Observations</label>
                     <textarea id="notes" placeholder="Any additional information..."></textarea>
                 </div>
 
-                <!-- Map -->
-                <div id="map"></div>
+                <!-- MAP -->
+                <div id="map">
+                    <div class="map-loading">
+                        <i class="fas fa-spinner"></i>
+                        <span>Loading map...</span>
+                    </div>
+                </div>
                 <div class="map-hint">
                     <i class="fas fa-map-pin"></i> Click on the map to drop a pin — coordinates will be captured
                 </div>
+                <div class="map-manual-coords">
+                    <input type="text" id="manualLat" placeholder="Latitude (e.g. -26.194)">
+                    <input type="text" id="manualLng" placeholder="Longitude (e.g. 28.241)">
+                    <button onclick="setManualCoords()">Set Pin</button>
+                </div>
 
-                <!-- Hidden Coordinates -->
                 <input type="hidden" id="latitude" value="">
                 <input type="hidden" id="longitude" value="">
 
-                <!-- Submit -->
                 <button type="submit" class="btn-primary" id="submitBtn">
                     <i class="fas fa-check-circle"></i> Submit Entry
                 </button>
@@ -873,7 +884,7 @@
             </form>
         </div>
 
-        <!-- ===== SUBMITTED ENTRIES ===== -->
+        <!-- SUBMITTED ENTRIES -->
         <div class="glass-card">
             <div class="card-header">
                 <i class="fas fa-database"></i>
@@ -894,7 +905,7 @@
             </div>
         </div>
 
-        <!-- ===== FOOTER WITH LOGOS ===== -->
+        <!-- FOOTER -->
         <div class="footer">
             <div class="footer-logos">
                 <img src="https://i.postimg.cc/KvmJMsTk/pelo-transparent-logo.png" alt="PELO Recovery" class="footer-logo" onerror="this.style.display='none'">
@@ -912,7 +923,7 @@
     ============================================================ -->
     <script>
         // ============================================================
-        // FIREBASE CONFIG
+        // FIREBASE
         // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyD5OB59lG6bAsmQ7A97zXP_MfQ5AM3BYaw",
@@ -936,6 +947,8 @@
         let isOffline = !navigator.onLine;
         let currentUser = null;
         let isDemo = false;
+        let mapInitialized = false;
+        let mapRetryCount = 0;
 
         // ============================================================
         // AUTH FUNCTIONS
@@ -953,6 +966,7 @@
                     document.getElementById('loginError').textContent = '';
                     loadEntries();
                     loadUserData();
+                    initMap();
                     showToast('✅ Welcome, ' + (currentUser.displayName || 'User') + '!');
                 })
                 .catch((error) => {
@@ -968,6 +982,7 @@
             document.getElementById('userNameDisplay').textContent = '👤 Guest User';
             document.getElementById('loginError').textContent = '';
             loadEntries();
+            initMap();
             showToast('👋 Welcome, Guest! Your data is saved locally.');
         }
 
@@ -991,7 +1006,6 @@
                 return;
             }
 
-            // Save to Firestore
             db.collection('users').doc(email).set({
                 name: name,
                 email: email,
@@ -1003,7 +1017,6 @@
             .then(() => {
                 document.getElementById('registerError').textContent = '';
                 closeRegister();
-                // Log them in as demo with their details
                 currentUser = { uid: 'registered_' + email, displayName: name, email: email };
                 isDemo = true;
                 document.getElementById('loginOverlay').classList.add('hidden');
@@ -1011,6 +1024,7 @@
                 document.getElementById('userNameDisplay').textContent = '👤 ' + name;
                 showToast('✅ Account created! Welcome, ' + name + '!');
                 loadEntries();
+                initMap();
             })
             .catch((error) => {
                 document.getElementById('registerError').textContent = '❌ ' + error.message;
@@ -1018,9 +1032,7 @@
         }
 
         function logout() {
-            if (!isDemo) {
-                auth.signOut();
-            }
+            if (!isDemo) auth.signOut();
             currentUser = null;
             isDemo = false;
             document.getElementById('loginOverlay').classList.remove('hidden');
@@ -1040,7 +1052,7 @@
         }
 
         // ============================================================
-        // OFFLINE DETECTION
+        // OFFLINE
         // ============================================================
         function updateOfflineStatus() {
             isOffline = !navigator.onLine;
@@ -1062,7 +1074,7 @@
         window.addEventListener('offline', updateOfflineStatus);
 
         // ============================================================
-        // LOAD ENTRIES FROM LOCALSTORAGE
+        // LOAD / SAVE ENTRIES
         // ============================================================
         function loadEntries() {
             try {
@@ -1150,7 +1162,7 @@
         }
 
         // ============================================================
-        // SYNC ENTRIES
+        // SYNC
         // ============================================================
         function syncEntries() {
             const pending = entries.filter(e => !e.synced);
@@ -1361,7 +1373,7 @@
         }
 
         // ============================================================
-        // DELETE ENTRY
+        // DELETE / CLEAR / EXPORT
         // ============================================================
         function deleteEntry(index) {
             if (confirm('Delete this entry?')) {
@@ -1371,9 +1383,6 @@
             }
         }
 
-        // ============================================================
-        // CLEAR ALL ENTRIES
-        // ============================================================
         function clearAllEntries() {
             if (entries.length === 0) {
                 showToast('No entries to clear.', 'info');
@@ -1386,9 +1395,6 @@
             }
         }
 
-        // ============================================================
-        // EXPORT CSV
-        // ============================================================
         function exportCSV() {
             if (entries.length === 0) {
                 showToast('⚠️ No entries to export.', 'error');
@@ -1453,19 +1459,70 @@
         }
 
         // ============================================================
-        // MAP
+        // MAP — FIXED VERSION
         // ============================================================
         function initMap() {
             const container = document.getElementById('map');
+            const mapElement = container;
+
+            // If map is already initialized, clean it up
+            if (mapInitialized && map) {
+                try {
+                    map.remove();
+                } catch(e) {}
+                map = null;
+                marker = null;
+                mapInitialized = false;
+            }
+
+            // Show loading state
+            mapElement.innerHTML = `
+                <div class="map-loading">
+                    <i class="fas fa-spinner"></i>
+                    <span>Loading map...</span>
+                </div>
+            `;
 
             try {
-                map = L.map('map').setView([-26.194, 28.241], 13);
+                // Wait for Leaflet to be available
+                if (typeof L === 'undefined') {
+                    console.warn('Leaflet not loaded, retrying...');
+                    mapRetryCount++;
+                    if (mapRetryCount < 3) {
+                        setTimeout(initMap, 1000);
+                    } else {
+                        showManualFallback();
+                    }
+                    return;
+                }
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                // Initialize map with default view (Watville/Daveyton area)
+                map = L.map(mapElement, {
+                    center: [-26.194, 28.241],
+                    zoom: 13,
+                    zoomControl: true,
+                    fadeAnimation: true,
+                    attributionControl: true
+                });
+
+                // Add tile layer with error handling
+                const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; OpenStreetMap contributors',
-                    maxZoom: 19
-                }).addTo(map);
+                    maxZoom: 19,
+                    errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+/HgAFhAJ/wlseLgAAAABJRU5ErkJggg=='
+                });
 
+                tileLayer.on('load', function() {
+                    console.log('✅ Map tiles loaded');
+                });
+
+                tileLayer.on('tileerror', function() {
+                    console.warn('Tile error, using fallback');
+                });
+
+                tileLayer.addTo(map);
+
+                // Handle map click for pin dropping
                 map.on('click', function(e) {
                     const lat = e.latlng.lat;
                     const lng = e.latlng.lng;
@@ -1474,8 +1531,19 @@
                         map.removeLayer(marker);
                     }
 
-                    marker = L.marker([lat, lng]).addTo(map);
+                    marker = L.marker([lat, lng], {
+                        draggable: true
+                    }).addTo(map);
+
                     marker.bindPopup(`📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`).openPopup();
+
+                    // Allow dragging to adjust position
+                    marker.on('dragend', function() {
+                        const pos = marker.getLatLng();
+                        document.getElementById('latitude').value = pos.lat.toFixed(6);
+                        document.getElementById('longitude').value = pos.lng.toFixed(6);
+                        showToast('📍 Pin moved! Coordinates updated.', 'info');
+                    });
 
                     document.getElementById('latitude').value = lat.toFixed(6);
                     document.getElementById('longitude').value = lng.toFixed(6);
@@ -1483,32 +1551,100 @@
                     showToast('📍 Pin dropped! Coordinates captured.', 'info');
                 });
 
-                console.log('🗺️ Map initialized');
+                // Add zoom control
+                L.control.zoom({
+                    position: 'topright'
+                }).addTo(map);
+
+                // Try to get user location
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        function(position) {
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+                            map.setView([lat, lng], 15);
+                            // Add a small marker for user location
+                            const userMarker = L.circleMarker([lat, lng], {
+                                radius: 8,
+                                fillColor: '#00B4D8',
+                                color: '#00F5D4',
+                                weight: 2,
+                                fillOpacity: 0.6
+                            }).addTo(map);
+                            userMarker.bindPopup('📌 Your location').openPopup();
+                            console.log('📍 User location found:', lat, lng);
+                        },
+                        function() {
+                            console.log('📍 User location denied, using default view');
+                        },
+                        { enableHighAccuracy: true, timeout: 10000 }
+                    );
+                }
+
+                mapInitialized = true;
+                mapRetryCount = 0;
+                console.log('🗺️ Map initialized successfully');
 
             } catch (error) {
-                console.warn('Map error:', error);
-                container.innerHTML = `
-                    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:0.75rem;flex-direction:column;gap:10px;">
-                        <i class="fas fa-map" style="font-size:1.8rem;opacity:0.3;"></i>
-                        <p>Map loading... Click below to add coordinates manually.</p>
-                        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
-                            <input type="text" id="manualLat" placeholder="Latitude" style="padding:6px 10px;background:rgba(0,0,0,0.3);border:1px solid var(--glass-border);border-radius:8px;color:white;width:100px;">
-                            <input type="text" id="manualLng" placeholder="Longitude" style="padding:6px 10px;background:rgba(0,0,0,0.3);border:1px solid var(--glass-border);border-radius:8px;color:white;width:100px;">
-                            <button onclick="setManualCoords()" style="padding:6px 14px;background:var(--pelo-gold);border:none;border-radius:8px;color:#000;font-weight:600;cursor:pointer;">Set</button>
-                        </div>
-                    </div>
-                `;
+                console.warn('Map initialization error:', error);
+                mapRetryCount++;
+                if (mapRetryCount < 3) {
+                    setTimeout(initMap, 1500);
+                } else {
+                    showManualFallback();
+                }
             }
         }
 
+        function showManualFallback() {
+            const container = document.getElementById('map');
+            container.innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:0.75rem;flex-direction:column;gap:10px;padding:20px;text-align:center;">
+                    <i class="fas fa-map" style="font-size:2rem;opacity:0.3;"></i>
+                    <p>Map could not load. Use the manual coordinates below.</p>
+                    <p style="font-size:0.6rem;color:var(--text-muted);">Enter latitude and longitude, then click "Set Pin"</p>
+                </div>
+            `;
+        }
+
         function setManualCoords() {
-            const lat = document.getElementById('manualLat')?.value;
-            const lng = document.getElementById('manualLng')?.value;
-            if (lat && lng) {
-                document.getElementById('latitude').value = lat;
-                document.getElementById('longitude').value = lng;
-                showToast('📍 Coordinates set manually.', 'info');
+            const lat = document.getElementById('manualLat')?.value.trim();
+            const lng = document.getElementById('manualLng')?.value.trim();
+
+            if (!lat || !lng) {
+                showToast('⚠️ Please enter both latitude and longitude.', 'error');
+                return;
             }
+
+            const latNum = parseFloat(lat);
+            const lngNum = parseFloat(lng);
+
+            if (isNaN(latNum) || isNaN(lngNum) || latNum < -90 || latNum > 90 || lngNum < -180 || lngNum > 180) {
+                showToast('⚠️ Invalid coordinates. Please enter valid lat/lng.', 'error');
+                return;
+            }
+
+            document.getElementById('latitude').value = latNum.toFixed(6);
+            document.getElementById('longitude').value = lngNum.toFixed(6);
+
+            // If map exists, add marker
+            if (mapInitialized && map) {
+                if (marker) {
+                    map.removeLayer(marker);
+                }
+                marker = L.marker([latNum, lngNum], { draggable: true }).addTo(map);
+                marker.bindPopup(`📍 ${latNum.toFixed(6)}, ${lngNum.toFixed(6)}`).openPopup();
+                map.setView([latNum, lngNum], 14);
+
+                marker.on('dragend', function() {
+                    const pos = marker.getLatLng();
+                    document.getElementById('latitude').value = pos.lat.toFixed(6);
+                    document.getElementById('longitude').value = pos.lng.toFixed(6);
+                    showToast('📍 Pin moved! Coordinates updated.', 'info');
+                });
+            }
+
+            showToast('📍 Pin set manually! Coordinates captured.', 'success');
         }
 
         // ============================================================
@@ -1533,7 +1669,7 @@
         // INIT
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            // Check if user is already logged in
+            // Check auth state
             auth.onAuthStateChanged((user) => {
                 if (user) {
                     currentUser = user;
@@ -1543,21 +1679,29 @@
                     document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.email || 'User';
                     loadEntries();
                     loadUserData();
+                    // Wait a moment for DOM to settle before loading map
+                    setTimeout(initMap, 300);
                 }
             });
 
-            initMap();
             loadEntries();
             updateOfflineStatus();
 
-            console.log('🚀 PELO Data Collection v2.0');
+            console.log('🚀 PELO Data Collection v2.1');
             console.log('   ⚛️ CHSH S=2.76');
             console.log('   🔐 Google Sign-in + Registration + Demo');
-            console.log('   📍 Map enabled — click to drop pins');
+            console.log('   📍 Map: Leaflet with fallback');
             console.log('   📧 Data sent to: mindtech.industriesai@gmail.com');
-            console.log('   💬 Community Safety Contacts included');
             console.log('   📶 Offline capable — auto-sync when online');
         });
+
+        // Retry map if not loaded after 5 seconds
+        setTimeout(function() {
+            if (!mapInitialized && document.getElementById('appContainer').style.display !== 'none') {
+                console.log('🔄 Retrying map initialization...');
+                initMap();
+            }
+        }, 5000);
     </script>
 
 </body>
