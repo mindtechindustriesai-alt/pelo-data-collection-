@@ -59,7 +59,7 @@
             z-index: 1;
         }
 
-        /* ===== LOGIN OVERLAY ===== */
+        /* ===== LOGIN OVERLAY - FIXED: always hidden by default, shown with .visible ===== */
         #loginOverlay {
             position: fixed;
             top: 0;
@@ -70,7 +70,7 @@
             backdrop-filter: blur(28px);
             -webkit-backdrop-filter: blur(28px);
             z-index: 9999;
-            display: flex;
+            display: none !important;  /* Hidden by default */
             align-items: center;
             justify-content: center;
             padding: 20px;
@@ -78,9 +78,8 @@
             transition: opacity 0.6s ease;
         }
 
-        #loginOverlay.hidden {
-            opacity: 0;
-            pointer-events: none;
+        #loginOverlay.visible {
+            display: flex !important;  /* Shown when .visible class is added */
         }
 
         @keyframes glassPulse {
@@ -575,6 +574,33 @@
             margin-top: 4px;
         }
 
+        /* ===== APP CONTAINER - FIXED: hidden by default ===== */
+        #appContainer {
+            display: none !important;
+        }
+        #appContainer.visible {
+            display: block !important;
+        }
+
+        /* ===== REGISTER MODAL - FIXED: hidden by default ===== */
+        #registerModal {
+            display: none !important;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5,8,15,0.95);
+            backdrop-filter: blur(20px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #registerModal.visible {
+            display: flex !important;
+        }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .container { padding: 10px; }
@@ -607,7 +633,7 @@
 <body>
 
     <!-- ============================================================
-    LOGIN OVERLAY
+    LOGIN OVERLAY - FIXED: uses .visible class
     ============================================================ -->
     <div id="loginOverlay">
         <div class="login-card">
@@ -634,9 +660,9 @@
     </div>
 
     <!-- ============================================================
-    REGISTRATION MODAL (Hidden by default)
+    REGISTRATION MODAL - FIXED: uses .visible class
     ============================================================ -->
-    <div id="registerModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(5,8,15,0.95); backdrop-filter:blur(20px); z-index:10000; display:none; align-items:center; justify-content:center; padding:20px;">
+    <div id="registerModal">
         <div class="login-card" style="max-width:400px;">
             <h2 style="font-size:1.3rem; margin-bottom:16px; color:var(--pelo-gold);">Create Account</h2>
             <form id="registerForm" onsubmit="registerUser(event)">
@@ -668,10 +694,9 @@
     </div>
 
     <!-- ============================================================
-    MAIN APP
+    MAIN APP - FIXED: uses .visible class
     ============================================================ -->
-    <div id="appContainer" class="container" style="display:none;">
-
+    <div id="appContainer" class="container">
         <!-- ===== HEADER WITH LOGO ===== -->
         <header class="header">
             <img src="https://i.postimg.cc/KvmJMsTk/pelo-transparent-logo.png" alt="PELO Recovery Centre" class="header-logo" onerror="this.src='https://i.postimg.cc/T114NczG/pelo-recovery-image-removebg-preview.png'">
@@ -936,6 +961,30 @@
         let isOffline = !navigator.onLine;
         let currentUser = null;
         let isDemo = false;
+        let authResolved = false;
+
+        // ============================================================
+        // SCREEN MANAGEMENT - FIXED: proper screen control
+        // ============================================================
+        function showScreen(screen) {
+            const loginOverlay = document.getElementById('loginOverlay');
+            const appContainer = document.getElementById('appContainer');
+            const registerModal = document.getElementById('registerModal');
+
+            // Hide all screens first
+            loginOverlay.classList.remove('visible');
+            appContainer.classList.remove('visible');
+            registerModal.classList.remove('visible');
+
+            // Show the requested screen
+            if (screen === 'login') {
+                loginOverlay.classList.add('visible');
+            } else if (screen === 'app') {
+                appContainer.classList.add('visible');
+            } else if (screen === 'register') {
+                registerModal.classList.add('visible');
+            }
+        }
 
         // ============================================================
         // AUTH FUNCTIONS
@@ -947,10 +996,10 @@
                 .then((result) => {
                     currentUser = result.user;
                     isDemo = false;
-                    document.getElementById('loginOverlay').classList.add('hidden');
-                    document.getElementById('appContainer').style.display = 'block';
+                    authResolved = true;
                     document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.email || 'User';
                     document.getElementById('loginError').textContent = '';
+                    showScreen('app');
                     loadEntries();
                     loadUserData();
                     showToast('✅ Welcome, ' + (currentUser.displayName || 'User') + '!');
@@ -963,20 +1012,20 @@
         function loginAsDemo() {
             currentUser = { uid: 'demo_' + Date.now(), displayName: 'Guest User', email: 'guest@pelorecovery.co.za' };
             isDemo = true;
-            document.getElementById('loginOverlay').classList.add('hidden');
-            document.getElementById('appContainer').style.display = 'block';
+            authResolved = true;
             document.getElementById('userNameDisplay').textContent = '👤 Guest User';
             document.getElementById('loginError').textContent = '';
+            showScreen('app');
             loadEntries();
             showToast('👋 Welcome, Guest! Your data is saved locally.');
         }
 
         function showRegister() {
-            document.getElementById('registerModal').style.display = 'flex';
+            showScreen('register');
         }
 
         function closeRegister() {
-            document.getElementById('registerModal').style.display = 'none';
+            showScreen('login');
         }
 
         function registerUser(event) {
@@ -991,7 +1040,6 @@
                 return;
             }
 
-            // Save to Firestore
             db.collection('users').doc(email).set({
                 name: name,
                 email: email,
@@ -1002,13 +1050,11 @@
             })
             .then(() => {
                 document.getElementById('registerError').textContent = '';
-                closeRegister();
-                // Log them in as demo with their details
                 currentUser = { uid: 'registered_' + email, displayName: name, email: email };
                 isDemo = true;
-                document.getElementById('loginOverlay').classList.add('hidden');
-                document.getElementById('appContainer').style.display = 'block';
+                authResolved = true;
                 document.getElementById('userNameDisplay').textContent = '👤 ' + name;
+                showScreen('app');
                 showToast('✅ Account created! Welcome, ' + name + '!');
                 loadEntries();
             })
@@ -1023,8 +1069,8 @@
             }
             currentUser = null;
             isDemo = false;
-            document.getElementById('loginOverlay').classList.remove('hidden');
-            document.getElementById('appContainer').style.display = 'none';
+            authResolved = false;
+            showScreen('login');
             showToast('👋 Logged out.');
         }
 
@@ -1038,6 +1084,37 @@
                 }
             }).catch(() => {});
         }
+
+        // ============================================================
+        // AUTH STATE LISTENER - FIXED: proper flow
+        // ============================================================
+        auth.onAuthStateChanged((user) => {
+            authResolved = true;
+            if (user) {
+                currentUser = user;
+                isDemo = false;
+                document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.email || 'User';
+                showScreen('app');
+                loadEntries();
+                loadUserData();
+            } else {
+                // Only show login if not already in demo mode
+                if (!isDemo) {
+                    showScreen('login');
+                }
+            }
+        });
+
+        // ============================================================
+        // TIMEOUT FALLBACK - FIXED: shows login after 3 seconds if auth hangs
+        // ============================================================
+        setTimeout(() => {
+            if (!authResolved) {
+                authResolved = true;
+                showScreen('login');
+                console.log('⏱️ Auth timeout: showing login screen');
+            }
+        }, 3000);
 
         // ============================================================
         // OFFLINE DETECTION
@@ -1530,22 +1607,13 @@
         }
 
         // ============================================================
-        // INIT
+        // INIT - FIXED: show login screen by default
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            // Check if user is already logged in
-            auth.onAuthStateChanged((user) => {
-                if (user) {
-                    currentUser = user;
-                    isDemo = false;
-                    document.getElementById('loginOverlay').classList.add('hidden');
-                    document.getElementById('appContainer').style.display = 'block';
-                    document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.email || 'User';
-                    loadEntries();
-                    loadUserData();
-                }
-            });
-
+            // Start with login screen visible
+            showScreen('login');
+            
+            // Initialize map
             initMap();
             loadEntries();
             updateOfflineStatus();
