@@ -3,12 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>PELO Data Collection — Mechanic & Harvest Sites</title>
+    <title>PELO Data Collection — Community Collection Network</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -27,6 +32,7 @@
             --dark-bg: #05080F;
             --dark-card: #0A0F1A;
             --glass-border: rgba(0,180,216,0.15);
+            --glass-border-light: rgba(0,180,216,0.08);
             --text-primary: #E8EDF5;
             --text-secondary: #8A99B0;
             --text-muted: #4A5A6A;
@@ -34,6 +40,7 @@
             --font-mono: 'Space Mono', monospace;
             --pelo-green: #1B4D3D;
             --pelo-gold: #C8A450;
+            --pelo-gold-glow: rgba(200,164,80,0.15);
         }
 
         body {
@@ -52,13 +59,168 @@
             z-index: 1;
         }
 
+        /* ===== LOGIN OVERLAY ===== */
+        #loginOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5,8,15,0.97);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            flex-direction: column;
+            transition: opacity 0.6s ease;
+        }
+
+        #loginOverlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        @keyframes glassPulse {
+            0% { border-color: rgba(0,180,216,0.2); box-shadow: 0 0 0 0 rgba(0,180,216,0.05); }
+            50% { border-color: rgba(200,164,80,0.3); box-shadow: 0 0 40px 5px var(--pelo-gold-glow); }
+            100% { border-color: rgba(0,180,216,0.2); box-shadow: 0 0 0 0 rgba(0,180,216,0.05); }
+        }
+
+        .login-card {
+            max-width: 440px;
+            width: 100%;
+            padding: 40px 32px;
+            text-align: center;
+            background: rgba(15,25,45,0.45);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            box-shadow: 0 8px 60px rgba(0,0,0,0.4);
+            animation: glassPulse 4s ease-in-out infinite;
+        }
+
+        .login-logo {
+            max-width: 200px;
+            width: 100%;
+            margin-bottom: 16px;
+            filter: drop-shadow(0 0 30px var(--pelo-gold-glow));
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .login-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--pelo-gold), var(--pelo-green));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 4px;
+        }
+
+        .login-subtitle {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            font-family: var(--font-mono);
+            letter-spacing: 2px;
+        }
+
+        .login-divider {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 16px 0;
+            color: var(--text-muted);
+            font-size: 0.6rem;
+        }
+
+        .login-divider::before,
+        .login-divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--glass-border);
+        }
+
+        .login-error {
+            color: var(--danger);
+            font-size: 0.75rem;
+            margin-top: 10px;
+            min-height: 20px;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: var(--font-exo);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
+        }
+
+        .btn-google {
+            background: #4285F4;
+            color: white;
+            box-shadow: 0 4px 15px rgba(66,133,244,0.3);
+        }
+        .btn-google:hover { box-shadow: 0 8px 25px rgba(66,133,244,0.5); }
+
+        .btn-demo {
+            background: linear-gradient(135deg, var(--pelo-gold), var(--pelo-green));
+            color: white;
+            box-shadow: 0 4px 15px rgba(200,164,80,0.3);
+        }
+        .btn-demo:hover { box-shadow: 0 8px 25px rgba(200,164,80,0.5); }
+
+        .btn-register {
+            background: rgba(255,255,255,0.06);
+            color: var(--text-primary);
+            border: 1px solid var(--glass-border);
+        }
+        .btn-register:hover {
+            background: rgba(255,255,255,0.12);
+            border-color: var(--pelo-gold);
+        }
+
+        .btn-logout {
+            background: rgba(239,71,111,0.15);
+            border: 1px solid rgba(239,71,111,0.2);
+            color: var(--danger);
+            padding: 6px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-family: var(--font-exo);
+            font-size: 0.6rem;
+            transition: all 0.3s;
+        }
+        .btn-logout:hover { background: rgba(239,71,111,0.25); }
+
         /* ===== HEADER WITH LOGO ===== */
         .header {
             display: flex;
             align-items: center;
             gap: 14px;
             padding: 16px 20px;
-            background: rgba(15,25,45,0.40);
+            background: rgba(15,25,45,0.35);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border);
@@ -69,7 +231,7 @@
         .header-logo {
             height: 52px;
             width: auto;
-            filter: drop-shadow(0 0 20px rgba(200,164,80,0.25));
+            filter: drop-shadow(0 0 20px var(--pelo-gold-glow));
             flex-shrink: 0;
         }
 
@@ -94,9 +256,9 @@
         }
 
         .header-badge {
-            font-size: 0.6rem;
-            background: rgba(0,255,136,0.08);
-            border: 1px solid rgba(0,255,136,0.15);
+            font-size: 0.55rem;
+            background: rgba(0,255,136,0.06);
+            border: 1px solid rgba(0,255,136,0.1);
             border-radius: 20px;
             padding: 4px 14px;
             color: var(--success);
@@ -105,9 +267,36 @@
             flex-shrink: 0;
         }
 
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+        }
+
+        .header-user .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--pelo-gold), var(--pelo-green));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            color: white;
+            overflow: hidden;
+        }
+
+        .header-user .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
         /* ===== GLASS CARD ===== */
         .glass-card {
-            background: rgba(15,25,45,0.35);
+            background: rgba(15,25,45,0.30);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border);
@@ -116,10 +305,7 @@
             margin-bottom: 20px;
             transition: all 0.3s ease;
         }
-
-        .glass-card:hover {
-            border-color: var(--pelo-gold);
-        }
+        .glass-card:hover { border-color: var(--pelo-gold); }
 
         .card-header {
             display: flex;
@@ -129,58 +315,41 @@
             padding-bottom: 12px;
             border-bottom: 1px solid var(--glass-border);
         }
-
-        .card-header i {
-            font-size: 1.3rem;
-            color: var(--pelo-gold);
-        }
-
-        .card-header h3 {
-            font-size: 1rem;
-            font-weight: 600;
-        }
-
+        .card-header i { font-size: 1.3rem; color: var(--pelo-gold); }
+        .card-header h3 { font-size: 1rem; font-weight: 600; }
         .card-header .count-badge {
             margin-left: auto;
             font-size: 0.6rem;
-            background: rgba(0,180,216,0.12);
+            background: rgba(0,180,216,0.08);
             padding: 2px 12px;
             border-radius: 20px;
             color: var(--text-secondary);
         }
 
         /* ===== FORM ===== */
-        .form-group {
-            margin-bottom: 14px;
-        }
-
+        .form-group { margin-bottom: 14px; }
         .form-group label {
             display: block;
             margin-bottom: 4px;
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             color: var(--text-secondary);
             font-weight: 600;
             letter-spacing: 0.5px;
             text-transform: uppercase;
         }
-
-        .form-group label .required {
-            color: var(--danger);
-        }
-
+        .form-group label .required { color: var(--danger); }
         .form-group label .optional {
             color: var(--text-muted);
             font-weight: 400;
             text-transform: none;
-            font-size: 0.6rem;
+            font-size: 0.55rem;
         }
-
         .form-group input,
         .form-group select,
         .form-group textarea {
             width: 100%;
             padding: 10px 14px;
-            background: rgba(0,0,0,0.30);
+            background: rgba(0,0,0,0.25);
             border: 1px solid var(--glass-border);
             border-radius: 14px;
             color: var(--text-primary);
@@ -188,81 +357,54 @@
             transition: all 0.3s;
             font-family: var(--font-exo);
         }
-
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
             border-color: var(--pelo-gold);
-            box-shadow: 0 0 0 3px rgba(200,164,80,0.06);
+            box-shadow: 0 0 0 3px rgba(200,164,80,0.04);
         }
+        .form-group textarea { resize: vertical; min-height: 60px; }
 
-        .form-group textarea {
-            resize: vertical;
-            min-height: 60px;
-        }
-
-        .form-row-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-        }
-
-        .form-row-3 {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 14px;
-        }
-
-        .form-row-4 {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 14px;
-        }
+        .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+        .form-row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
 
         .form-section-title {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 700;
             color: var(--pelo-gold);
             margin: 10px 0 12px;
             padding-bottom: 6px;
-            border-bottom: 1px solid rgba(200,164,80,0.12);
+            border-bottom: 1px solid rgba(200,164,80,0.08);
             display: flex;
             align-items: center;
             gap: 8px;
         }
-
-        .form-section-title i {
-            font-size: 0.9rem;
-        }
+        .form-section-title i { font-size: 0.9rem; }
 
         /* ===== MAP ===== */
         #map {
             width: 100%;
-            height: 280px;
+            height: 260px;
             border-radius: 14px;
             overflow: hidden;
             border: 1px solid var(--glass-border);
             margin: 10px 0 14px;
             background: #0A0F1A;
         }
-
         #map .leaflet-control-attribution {
             background: rgba(5,8,15,0.8);
             color: var(--text-secondary);
-            font-size: 0.5rem;
+            font-size: 0.45rem;
         }
-
         .map-hint {
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             color: var(--text-secondary);
             text-align: center;
             margin-top: 4px;
         }
-
-        .map-hint i {
-            color: var(--pelo-gold);
-        }
+        .map-hint i { color: var(--pelo-gold); }
 
         /* ===== BUTTONS ===== */
         .btn-primary {
@@ -282,49 +424,34 @@
             justify-content: center;
             gap: 10px;
         }
-
-        .btn-primary:hover {
-            transform: scale(1.01);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
+        .btn-primary:hover { transform: scale(1.01); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
         .btn-secondary {
             padding: 8px 16px;
-            background: rgba(0,0,0,0.25);
+            background: rgba(0,0,0,0.2);
             border: 1px solid var(--glass-border);
             border-radius: 30px;
             color: var(--text-secondary);
             cursor: pointer;
             font-family: var(--font-exo);
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             transition: all 0.3s;
         }
-
-        .btn-secondary:hover {
-            border-color: var(--pelo-gold);
-            color: var(--text-primary);
-        }
+        .btn-secondary:hover { border-color: var(--pelo-gold); color: var(--text-primary); }
 
         .btn-danger {
             padding: 4px 12px;
-            background: rgba(239,71,111,0.15);
-            border: 1px solid rgba(239,71,111,0.2);
+            background: rgba(239,71,111,0.12);
+            border: 1px solid rgba(239,71,111,0.15);
             border-radius: 20px;
             color: var(--danger);
             cursor: pointer;
             font-family: var(--font-exo);
-            font-size: 0.6rem;
+            font-size: 0.55rem;
             transition: all 0.3s;
         }
-
-        .btn-danger:hover {
-            background: rgba(239,71,111,0.25);
-        }
+        .btn-danger:hover { background: rgba(239,71,111,0.25); }
 
         /* ===== SUBMITTED ENTRIES ===== */
         .entries-list {
@@ -332,53 +459,32 @@
             max-height: 300px;
             overflow-y: auto;
         }
-
         .entry-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 10px 14px;
-            background: rgba(0,0,0,0.15);
+            background: rgba(0,0,0,0.12);
             border-radius: 12px;
             margin-bottom: 6px;
             border-left: 3px solid var(--pelo-gold);
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
-
         .entry-item .entry-info {
             display: flex;
             flex-direction: column;
             gap: 2px;
             flex: 1;
         }
-
-        .entry-item .entry-info .name {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .entry-item .entry-info .details {
-            font-size: 0.65rem;
-            color: var(--text-secondary);
-        }
-
-        .entry-item .entry-info .location {
-            font-size: 0.6rem;
-            color: var(--text-muted);
-            font-family: var(--font-mono);
-        }
-
-        .entry-item .entry-actions {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
-
+        .entry-item .entry-info .name { font-weight: 600; color: var(--text-primary); }
+        .entry-item .entry-info .details { font-size: 0.6rem; color: var(--text-secondary); }
+        .entry-item .entry-info .location { font-size: 0.55rem; color: var(--text-muted); font-family: var(--font-mono); }
+        .entry-item .entry-actions { display: flex; gap: 6px; align-items: center; }
         .entry-item .entry-status {
-            font-size: 0.5rem;
+            font-size: 0.45rem;
             padding: 2px 10px;
             border-radius: 20px;
-            background: rgba(0,255,136,0.08);
+            background: rgba(0,255,136,0.06);
             color: var(--success);
             font-family: var(--font-mono);
         }
@@ -389,21 +495,15 @@
             align-items: center;
             gap: 8px;
             padding: 8px 14px;
-            background: rgba(255,215,0,0.08);
-            border: 1px solid rgba(255,215,0,0.15);
+            background: rgba(255,215,0,0.06);
+            border: 1px solid rgba(255,215,0,0.1);
             border-radius: 12px;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: var(--gold);
             margin-bottom: 12px;
         }
-
-        .offline-indicator.visible {
-            display: flex;
-        }
-
-        .offline-indicator i {
-            font-size: 0.9rem;
-        }
+        .offline-indicator.visible { display: flex; }
+        .offline-indicator i { font-size: 0.9rem; }
 
         /* ===== TOAST ===== */
         .toast {
@@ -413,7 +513,6 @@
             transform: translateX(-50%);
             background: rgba(10,18,35,0.92);
             backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border);
             border-radius: 16px;
             padding: 14px 28px;
@@ -421,26 +520,59 @@
             z-index: 9999;
             box-shadow: 0 8px 50px rgba(0,0,0,0.5);
             font-family: var(--font-exo);
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             max-width: 90%;
             text-align: center;
             animation: toastIn 0.3s ease;
         }
-
         @keyframes toastIn {
             from { opacity: 0; transform: translateX(-50%) translateY(20px); }
             to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
 
-        /* ===== QUANTUM LINE ===== */
+        /* ===== FOOTER ===== */
+        .footer {
+            text-align: center;
+            padding: 20px 20px 10px;
+            margin-top: 20px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .footer-logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .footer-logo {
+            height: 40px;
+            width: auto;
+            opacity: 0.7;
+            transition: all 0.3s;
+            filter: drop-shadow(0 0 8px rgba(0,180,216,0.05));
+            object-fit: contain;
+        }
+        .footer-logo:hover {
+            opacity: 1;
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 12px rgba(0,180,216,0.15));
+        }
+
         .quantum-line {
             font-family: var(--font-mono);
             font-size: 0.5rem;
             color: var(--text-muted);
             letter-spacing: 2px;
-            text-align: center;
             opacity: 0.4;
-            margin-top: 12px;
+        }
+
+        .footer .copyright {
+            font-size: 0.5rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
         }
 
         /* ===== RESPONSIVE ===== */
@@ -455,6 +587,9 @@
             #map { height: 200px; }
             .entry-item { flex-wrap: wrap; gap: 6px; }
             .header-logo { height: 40px; }
+            .footer-logo { height: 32px; }
+            .login-card { padding: 28px 20px; }
+            .login-logo { max-width: 150px; }
         }
 
         @media (max-width: 480px) {
@@ -462,22 +597,93 @@
             .form-row-4 { grid-template-columns: 1fr; }
             .header-logo { height: 36px; }
             .header-text h1 { font-size: 0.9rem; }
-            .header-badge { font-size: 0.5rem; padding: 2px 10px; }
+            .header-badge { font-size: 0.45rem; padding: 2px 10px; }
+            .login-title { font-size: 1.3rem; }
+            .footer-logo { height: 28px; }
+            .footer-logos { gap: 16px; }
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <!-- ============================================================
+    LOGIN OVERLAY
+    ============================================================ -->
+    <div id="loginOverlay">
+        <div class="login-card">
+            <img src="https://i.postimg.cc/KvmJMsTk/pelo-transparent-logo.png" alt="PELO Recovery Centre" class="login-logo" onerror="this.src='https://i.postimg.cc/T114NczG/pelo-recovery-image-removebg-preview.png'">
+            <div class="login-title">PELO Data Collection</div>
+            <div class="login-subtitle">Community Collection Network</div>
+
+            <button class="btn-login btn-google" onclick="loginWithGoogle()">
+                <i class="fab fa-google" style="font-size:1.1rem;"></i> Sign in with Google
+            </button>
+
+            <div class="login-divider">or</div>
+
+            <button class="btn-login btn-demo" onclick="loginAsDemo()">
+                <i class="fas fa-user-astronaut"></i> Continue as Guest (Demo)
+            </button>
+
+            <button class="btn-login btn-register" onclick="showRegister()">
+                <i class="fas fa-user-plus"></i> Register New Account
+            </button>
+
+            <div id="loginError" class="login-error"></div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    REGISTRATION MODAL (Hidden by default)
+    ============================================================ -->
+    <div id="registerModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(5,8,15,0.95); backdrop-filter:blur(20px); z-index:10000; display:none; align-items:center; justify-content:center; padding:20px;">
+        <div class="login-card" style="max-width:400px;">
+            <h2 style="font-size:1.3rem; margin-bottom:16px; color:var(--pelo-gold);">Create Account</h2>
+            <form id="registerForm" onsubmit="registerUser(event)">
+                <div class="form-group">
+                    <label>Full Name <span class="required">*</span></label>
+                    <input type="text" id="regName" placeholder="Your full name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email Address <span class="required">*</span></label>
+                    <input type="email" id="regEmail" placeholder="your@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="regPhone" placeholder="+27 82 555 1234">
+                </div>
+                <div class="form-group">
+                    <label>Community / Area</label>
+                    <input type="text" id="regArea" placeholder="e.g. Watville, Daveyton">
+                </div>
+                <button type="submit" class="btn-primary" style="margin-top:10px;">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+                <button type="button" class="btn-login btn-register" style="margin-top:10px;" onclick="closeRegister()">
+                    <i class="fas fa-arrow-left"></i> Back to Login
+                </button>
+            </form>
+            <div id="registerError" class="login-error"></div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    MAIN APP
+    ============================================================ -->
+    <div id="appContainer" class="container" style="display:none;">
 
         <!-- ===== HEADER WITH LOGO ===== -->
         <header class="header">
-            <img src="https://i.postimg.cc/T114NczG/pelo-recovery-image-removebg-preview.png" alt="PELO Recovery Centre" class="header-logo" onerror="this.src='https://i.postimg.cc/KvmJMsTk/pelo-transparent-logo.png'">
+            <img src="https://i.postimg.cc/KvmJMsTk/pelo-transparent-logo.png" alt="PELO Recovery Centre" class="header-logo" onerror="this.src='https://i.postimg.cc/T114NczG/pelo-recovery-image-removebg-preview.png'">
             <div class="header-text">
                 <h1>PELO Data Collection</h1>
-                <p>Mechanic &amp; Harvest Site Mapping</p>
+                <p>Community Collection Network</p>
             </div>
             <span class="header-badge">⚛️ CHSH S=2.76</span>
+            <div class="header-user" id="userDisplay">
+                <span id="userNameDisplay">Guest</span>
+                <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
         </header>
 
         <!-- ===== OFFLINE INDICATOR ===== -->
@@ -503,6 +709,10 @@
                         <option value="generator">⚡ Generator / Plant</option>
                         <option value="garage">🚗 Garage / Service Centre</option>
                         <option value="mine">⛏️ Mining Site</option>
+                        <option value="fastfood">🍔 Fast Food / Takeaway</option>
+                        <option value="kota">🍟 Kota Stand / Amagwinya</option>
+                        <option value="roadhouse">🏍️ Roadhouse</option>
+                        <option value="spaza">🏪 Spaza / Tuck Shop</option>
                         <option value="other">📌 Other (specify below)</option>
                     </select>
                 </div>
@@ -540,16 +750,51 @@
                 <!-- Volume Estimate -->
                 <div class="form-row-3">
                     <div class="form-group">
-                        <label>Est. Monthly Oil (L) <span class="required">*</span></label>
+                        <label>Cooking Oil (L) <span class="required">*</span></label>
                         <input type="number" id="oilVolume" placeholder="e.g. 200" required min="0">
                     </div>
                     <div class="form-group">
-                        <label>Est. Monthly Hazardous (kg)</label>
-                        <input type="number" id="hazardousVolume" placeholder="e.g. 50" min="0">
+                        <label>Engine Oil (L)</label>
+                        <input type="number" id="engineOil" placeholder="e.g. 50" min="0">
                     </div>
                     <div class="form-group">
                         <label>Other Waste (kg)</label>
                         <input type="number" id="otherVolume" placeholder="e.g. 30" min="0">
+                    </div>
+                </div>
+
+                <!-- Waste Types -->
+                <div class="form-group">
+                    <label>Waste Type(s) Collected</label>
+                    <select id="wasteType" multiple style="height:80px;">
+                        <option value="cooking_oil">🟢 Used Cooking Oil</option>
+                        <option value="engine_oil">🟡 Used Engine Oil</option>
+                        <option value="diesel">⛽ Used Diesel/Petrol</option>
+                        <option value="food_waste">🍌 Food / Organic Waste</option>
+                        <option value="plastic">♻️ Plastic Waste</option>
+                        <option value="cardboard">📦 Cardboard / Paper</option>
+                        <option value="aluminium">🥫 Aluminium / Tin</option>
+                        <option value="batteries">🔋 Batteries</option>
+                        <option value="ewaste">💻 Electronic Waste</option>
+                        <option value="other">📌 Other</option>
+                    </select>
+                    <span style="font-size:0.55rem; color:var(--text-muted);">Hold Ctrl (Cmd) to select multiple</span>
+                </div>
+
+                <!-- Collection Frequency -->
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Collection Frequency</label>
+                        <select id="collectionFrequency">
+                            <option value="daily">Daily</option>
+                            <option value="weekly" selected>Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="onetime">One-off</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Estimated Monthly Volume (L/kg)</label>
+                        <input type="number" id="monthlyVolume" placeholder="e.g. 500" min="0">
                     </div>
                 </div>
 
@@ -565,20 +810,20 @@
                     </select>
                 </div>
 
-                <!-- ===== COMMUNITY SAFETY SECTION ===== -->
+                <!-- Community Safety -->
                 <div class="form-section-title">
                     <i class="fas fa-shield-alt"></i> Community Safety Contacts
-                    <span style="font-size:0.55rem; color:var(--text-muted); font-weight:400; text-transform:none; margin-left:4px;">(optional)</span>
+                    <span style="font-size:0.5rem; color:var(--text-muted); font-weight:400; text-transform:none; margin-left:4px;">(optional)</span>
                 </div>
 
                 <div class="form-row-3">
                     <div class="form-group">
                         <label>WhatsApp Group <span class="optional">(optional)</span></label>
-                        <input type="text" id="whatsappGroup" placeholder="WhatsApp group name or invite link">
+                        <input type="text" id="whatsappGroup" placeholder="Group name or invite link">
                     </div>
                     <div class="form-group">
                         <label>WhatsApp Admin <span class="optional">(optional)</span></label>
-                        <input type="text" id="whatsappAdmin" placeholder="Admin name or phone number">
+                        <input type="text" id="whatsappAdmin" placeholder="Admin name or phone">
                     </div>
                     <div class="form-group">
                         <label>Security Company <span class="optional">(optional)</span></label>
@@ -589,7 +834,7 @@
                 <div class="form-row-3">
                     <div class="form-group">
                         <label>Security Contact <span class="optional">(optional)</span></label>
-                        <input type="text" id="securityContact" placeholder="Security contact name or number">
+                        <input type="text" id="securityContact" placeholder="Contact name or number">
                     </div>
                     <div class="form-group">
                         <label>Police Station <span class="optional">(optional)</span></label>
@@ -610,7 +855,7 @@
                 <!-- Map -->
                 <div id="map"></div>
                 <div class="map-hint">
-                    <i class="fas fa-map-pin"></i> Click on the map to drop a pin — the coordinates will be added below
+                    <i class="fas fa-map-pin"></i> Click on the map to drop a pin — coordinates will be captured
                 </div>
 
                 <!-- Hidden Coordinates -->
@@ -622,8 +867,8 @@
                     <i class="fas fa-check-circle"></i> Submit Entry
                 </button>
 
-                <div style="margin-top:10px; text-align:center; font-size:0.6rem; color:var(--text-secondary);">
-                    <i class="fas fa-lock"></i> Data is quantum-verified and sent to MindTech
+                <div style="margin-top:10px; text-align:center; font-size:0.55rem; color:var(--text-secondary);">
+                    <i class="fas fa-lock"></i> Quantum-verified · CHSH S=2.76 · SA 2026/05142
                 </div>
             </form>
         </div>
@@ -639,18 +884,26 @@
             <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
                 <button class="btn-secondary" onclick="exportCSV()"><i class="fas fa-file-export"></i> Export CSV</button>
                 <button class="btn-secondary" onclick="syncEntries()"><i class="fas fa-sync-alt"></i> Sync Now</button>
-                <button class="btn-secondary" onclick="clearAllEntries()" style="color:var(--danger);border-color:rgba(239,71,111,0.2);"><i class="fas fa-trash"></i> Clear All</button>
+                <button class="btn-secondary" onclick="clearAllEntries()" style="color:var(--danger);border-color:rgba(239,71,111,0.15);"><i class="fas fa-trash"></i> Clear All</button>
             </div>
 
             <div id="entriesList" class="entries-list">
-                <p style="color:var(--text-secondary); font-size:0.8rem; text-align:center; padding:20px 0;">
+                <p style="color:var(--text-secondary); font-size:0.75rem; text-align:center; padding:20px 0;">
                     No entries yet. Submit your first site above.
                 </p>
             </div>
         </div>
 
-        <!-- ===== QUANTUM LINE ===== -->
-        <div class="quantum-line">secure by design · south africa · ⚛️ CHSH S=2.76</div>
+        <!-- ===== FOOTER WITH LOGOS ===== -->
+        <div class="footer">
+            <div class="footer-logos">
+                <img src="https://i.postimg.cc/KvmJMsTk/pelo-transparent-logo.png" alt="PELO Recovery" class="footer-logo" onerror="this.style.display='none'">
+                <img src="https://i.postimg.cc/zXW78GNH/Mind-Tech-Transparent-Logo.png" alt="MindTech Industries" class="footer-logo" onerror="this.style.display='none'">
+                <img src="https://i.postimg.cc/T3ytnBqN/KD-LOGO-IMAGE-removebg-preview.png" alt="KD Concepts" class="footer-logo" onerror="this.style.display='none'">
+            </div>
+            <div class="quantum-line">⚛️ CHSH S=2.76 · SA 2026/05142</div>
+            <div class="copyright">© 2026 PELO Recovery · Powered by MindTech Industries</div>
+        </div>
 
     </div>
 
@@ -659,12 +912,132 @@
     ============================================================ -->
     <script>
         // ============================================================
+        // FIREBASE CONFIG
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5OB59lG6bAsmQ7A97zXP_MfQ5AM3BYaw",
+            authDomain: "mindflow-ai-education.firebaseapp.com",
+            projectId: "mindflow-ai-education",
+            storageBucket: "mindflow-ai-education.firebasestorage.app",
+            messagingSenderId: "157615197603",
+            appId: "1:157615197603:web:540d67781fc55d04c11e16"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // ============================================================
         // STATE
         // ============================================================
         let entries = [];
         let map = null;
         let marker = null;
         let isOffline = !navigator.onLine;
+        let currentUser = null;
+        let isDemo = false;
+
+        // ============================================================
+        // AUTH FUNCTIONS
+        // ============================================================
+        function loginWithGoogle() {
+            document.getElementById('loginError').textContent = '⏳ Signing in...';
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    currentUser = result.user;
+                    isDemo = false;
+                    document.getElementById('loginOverlay').classList.add('hidden');
+                    document.getElementById('appContainer').style.display = 'block';
+                    document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.email || 'User';
+                    document.getElementById('loginError').textContent = '';
+                    loadEntries();
+                    loadUserData();
+                    showToast('✅ Welcome, ' + (currentUser.displayName || 'User') + '!');
+                })
+                .catch((error) => {
+                    document.getElementById('loginError').textContent = '❌ ' + error.message;
+                });
+        }
+
+        function loginAsDemo() {
+            currentUser = { uid: 'demo_' + Date.now(), displayName: 'Guest User', email: 'guest@pelorecovery.co.za' };
+            isDemo = true;
+            document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('appContainer').style.display = 'block';
+            document.getElementById('userNameDisplay').textContent = '👤 Guest User';
+            document.getElementById('loginError').textContent = '';
+            loadEntries();
+            showToast('👋 Welcome, Guest! Your data is saved locally.');
+        }
+
+        function showRegister() {
+            document.getElementById('registerModal').style.display = 'flex';
+        }
+
+        function closeRegister() {
+            document.getElementById('registerModal').style.display = 'none';
+        }
+
+        function registerUser(event) {
+            event.preventDefault();
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const area = document.getElementById('regArea').value.trim();
+
+            if (!name || !email) {
+                document.getElementById('registerError').textContent = '⚠️ Name and Email are required.';
+                return;
+            }
+
+            // Save to Firestore
+            db.collection('users').doc(email).set({
+                name: name,
+                email: email,
+                phone: phone || '',
+                area: area || '',
+                registeredAt: new Date().toISOString(),
+                isDemo: false
+            })
+            .then(() => {
+                document.getElementById('registerError').textContent = '';
+                closeRegister();
+                // Log them in as demo with their details
+                currentUser = { uid: 'registered_' + email, displayName: name, email: email };
+                isDemo = true;
+                document.getElementById('loginOverlay').classList.add('hidden');
+                document.getElementById('appContainer').style.display = 'block';
+                document.getElementById('userNameDisplay').textContent = '👤 ' + name;
+                showToast('✅ Account created! Welcome, ' + name + '!');
+                loadEntries();
+            })
+            .catch((error) => {
+                document.getElementById('registerError').textContent = '❌ ' + error.message;
+            });
+        }
+
+        function logout() {
+            if (!isDemo) {
+                auth.signOut();
+            }
+            currentUser = null;
+            isDemo = false;
+            document.getElementById('loginOverlay').classList.remove('hidden');
+            document.getElementById('appContainer').style.display = 'none';
+            showToast('👋 Logged out.');
+        }
+
+        function loadUserData() {
+            if (!currentUser) return;
+            const userRef = db.collection('users').doc(currentUser.email || currentUser.uid);
+            userRef.get().then((doc) => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    document.getElementById('userNameDisplay').textContent = data.name || currentUser.displayName || 'User';
+                }
+            }).catch(() => {});
+        }
 
         // ============================================================
         // OFFLINE DETECTION
@@ -719,7 +1092,7 @@
 
             if (entries.length === 0) {
                 container.innerHTML = `
-                    <p style="color:var(--text-secondary); font-size:0.8rem; text-align:center; padding:20px 0;">
+                    <p style="color:var(--text-secondary); font-size:0.75rem; text-align:center; padding:20px 0;">
                         No entries yet. Submit your first site above.
                     </p>
                 `;
@@ -733,10 +1106,13 @@
                     'generator': '⚡ Generator',
                     'garage': '🚗 Garage',
                     'mine': '⛏️ Mine',
+                    'fastfood': '🍔 Fast Food',
+                    'kota': '🍟 Kota / Amagwinya',
+                    'roadhouse': '🏍️ Roadhouse',
+                    'spaza': '🏪 Spaza / Tuck Shop',
                     'other': '📌 Other'
                 };
                 const typeLabel = siteTypeLabels[entry.siteType] || entry.siteType;
-
                 const syncStatus = entry.synced ? '✅ Synced' : '⏳ Pending sync';
 
                 html += `
@@ -744,10 +1120,8 @@
                         <div class="entry-info">
                             <span class="name">${escapeHtml(entry.ownerName)}</span>
                             <span class="details">${typeLabel} · ${escapeHtml(entry.contactPerson)} · ${escapeHtml(entry.phone)}</span>
-                            <span class="location">📍 ${escapeHtml(entry.area)} · ${escapeHtml(entry.oilVolume || 0)}L/mo</span>
+                            <span class="location">📍 ${escapeHtml(entry.area)} · ${escapeHtml(entry.oilVolume || 0)}L cooking oil</span>
                             ${entry.whatsappGroup ? `<span class="location">💬 ${escapeHtml(entry.whatsappGroup)}</span>` : ''}
-                            ${entry.securityCompany ? `<span class="location">🛡️ ${escapeHtml(entry.securityCompany)}</span>` : ''}
-                            ${entry.policeWard ? `<span class="location">🚔 ${escapeHtml(entry.policeWard)}</span>` : ''}
                         </div>
                         <div class="entry-actions">
                             <span class="entry-status">${syncStatus}</span>
@@ -819,8 +1193,12 @@
             const area = document.getElementById('area').value.trim();
             const address = document.getElementById('address').value.trim();
             const oilVolume = document.getElementById('oilVolume').value;
-            const hazardousVolume = document.getElementById('hazardousVolume').value || 0;
+            const engineOil = document.getElementById('engineOil').value || 0;
             const otherVolume = document.getElementById('otherVolume').value || 0;
+            const wasteType = document.getElementById('wasteType');
+            const wasteTypes = Array.from(wasteType.selectedOptions).map(opt => opt.value);
+            const collectionFrequency = document.getElementById('collectionFrequency').value;
+            const monthlyVolume = document.getElementById('monthlyVolume').value || 0;
             const disposalMethod = document.getElementById('disposalMethod').value;
             const notes = document.getElementById('notes').value.trim();
             const latitude = document.getElementById('latitude').value;
@@ -847,8 +1225,11 @@
                 area,
                 address,
                 oilVolume: parseInt(oilVolume) || 0,
-                hazardousVolume: parseInt(hazardousVolume) || 0,
+                engineOil: parseInt(engineOil) || 0,
                 otherVolume: parseInt(otherVolume) || 0,
+                wasteTypes,
+                collectionFrequency,
+                monthlyVolume: parseInt(monthlyVolume) || 0,
                 disposalMethod,
                 notes,
                 latitude,
@@ -859,6 +1240,8 @@
                 securityContact,
                 policeStation,
                 policeWard,
+                userId: currentUser ? currentUser.uid : 'anonymous',
+                userName: currentUser ? currentUser.displayName || currentUser.email : 'Guest',
                 timestamp: new Date().toISOString(),
                 chsh_s: '2.76',
                 patent: 'SA 2026/05142',
@@ -884,8 +1267,9 @@
             document.getElementById('latitude').value = '';
             document.getElementById('longitude').value = '';
             document.getElementById('oilVolume').value = '';
-            document.getElementById('hazardousVolume').value = '';
+            document.getElementById('engineOil').value = '';
             document.getElementById('otherVolume').value = '';
+            document.getElementById('monthlyVolume').value = '';
             document.getElementById('notes').value = '';
             document.getElementById('whatsappGroup').value = '';
             document.getElementById('whatsappAdmin').value = '';
@@ -924,9 +1308,12 @@
                     'Phone Number': entry.phone,
                     'Area / Community': entry.area,
                     'Address': entry.address || 'N/A',
-                    'Oil Volume (L/mo)': entry.oilVolume,
-                    'Hazardous Volume (kg/mo)': entry.hazardousVolume,
+                    'Cooking Oil (L/mo)': entry.oilVolume,
+                    'Engine Oil (L/mo)': entry.engineOil,
                     'Other Waste (kg/mo)': entry.otherVolume,
+                    'Waste Types': entry.wasteTypes.join(', ') || 'N/A',
+                    'Collection Frequency': entry.collectionFrequency || 'N/A',
+                    'Monthly Volume': entry.monthlyVolume || 'N/A',
                     'Disposal Method': entry.disposalMethod || 'Not specified',
                     'Notes': entry.notes || 'N/A',
                     'Latitude': entry.latitude || 'N/A',
@@ -937,6 +1324,8 @@
                     'Security Contact': entry.securityContact || 'N/A',
                     'Police Station': entry.policeStation || 'N/A',
                     'Police Ward Cell': entry.policeWard || 'N/A',
+                    'User ID': entry.userId || 'N/A',
+                    'User Name': entry.userName || 'N/A',
                     'CHSH S': entry.chsh_s,
                     'Patent': entry.patent,
                     'Timestamp': entry.timestamp,
@@ -1007,10 +1396,10 @@
             }
 
             const headers = ['ID', 'Site Type', 'Owner Name', 'Contact Person', 'Phone', 'Area', 'Address',
-                'Oil Volume (L)', 'Hazardous (kg)', 'Other (kg)', 'Disposal Method', 'Notes',
-                'Latitude', 'Longitude',
+                'Cooking Oil (L)', 'Engine Oil (L)', 'Other Waste (kg)', 'Waste Types', 'Collection Frequency',
+                'Monthly Volume', 'Disposal Method', 'Notes', 'Latitude', 'Longitude',
                 'WhatsApp Group', 'WhatsApp Admin', 'Security Company', 'Security Contact',
-                'Police Station', 'Police Ward Cell',
+                'Police Station', 'Police Ward Cell', 'User ID', 'User Name',
                 'CHSH S', 'Patent', 'Timestamp', 'Status', 'Synced'
             ];
 
@@ -1026,8 +1415,11 @@
                     `"${e.area}"`,
                     `"${e.address || ''}"`,
                     e.oilVolume || 0,
-                    e.hazardousVolume || 0,
+                    e.engineOil || 0,
                     e.otherVolume || 0,
+                    `"${(e.wasteTypes || []).join('; ')}"`,
+                    `"${e.collectionFrequency || ''}"`,
+                    e.monthlyVolume || 0,
                     `"${e.disposalMethod || ''}"`,
                     `"${e.notes || ''}"`,
                     `"${e.latitude || ''}"`,
@@ -1038,6 +1430,8 @@
                     `"${e.securityContact || ''}"`,
                     `"${e.policeStation || ''}"`,
                     `"${e.policeWard || ''}"`,
+                    `"${e.userId || ''}"`,
+                    `"${e.userName || ''}"`,
                     `"${e.chsh_s}"`,
                     `"${e.patent}"`,
                     `"${e.timestamp}"`,
@@ -1094,8 +1488,8 @@
             } catch (error) {
                 console.warn('Map error:', error);
                 container.innerHTML = `
-                    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:0.8rem;flex-direction:column;gap:10px;">
-                        <i class="fas fa-map" style="font-size:2rem;opacity:0.3;"></i>
+                    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:0.75rem;flex-direction:column;gap:10px;">
+                        <i class="fas fa-map" style="font-size:1.8rem;opacity:0.3;"></i>
                         <p>Map loading... Click below to add coordinates manually.</p>
                         <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
                             <input type="text" id="manualLat" placeholder="Latitude" style="padding:6px 10px;background:rgba(0,0,0,0.3);border:1px solid var(--glass-border);border-radius:8px;color:white;width:100px;">
@@ -1139,15 +1533,30 @@
         // INIT
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            loadEntries();
+            // Check if user is already logged in
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUser = user;
+                    isDemo = false;
+                    document.getElementById('loginOverlay').classList.add('hidden');
+                    document.getElementById('appContainer').style.display = 'block';
+                    document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.email || 'User';
+                    loadEntries();
+                    loadUserData();
+                }
+            });
+
             initMap();
-            console.log('🚀 PELO Data Collection Page Loaded');
+            loadEntries();
+            updateOfflineStatus();
+
+            console.log('🚀 PELO Data Collection v2.0');
             console.log('   ⚛️ CHSH S=2.76');
+            console.log('   🔐 Google Sign-in + Registration + Demo');
             console.log('   📍 Map enabled — click to drop pins');
             console.log('   📧 Data sent to: mindtech.industriesai@gmail.com');
-            console.log('   💬 WhatsApp Group & Safety Contacts included');
+            console.log('   💬 Community Safety Contacts included');
             console.log('   📶 Offline capable — auto-sync when online');
-            console.log('   📊 ' + entries.length + ' entries loaded');
         });
     </script>
 
