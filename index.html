@@ -63,7 +63,7 @@
             z-index: 1;
         }
 
-        /* ===== LOGIN OVERLAY — ALWAYS SHOWN FIRST ===== */
+        /* ===== LOGIN OVERLAY — ALWAYS ON TOP ===== */
         #loginOverlay {
             position: fixed;
             top: 0;
@@ -79,7 +79,7 @@
             justify-content: center;
             padding: 20px;
             flex-direction: column;
-            transition: opacity 0.6s ease;
+            transition: opacity 0.8s ease;
         }
 
         #loginOverlay.hidden {
@@ -87,7 +87,7 @@
             pointer-events: none;
         }
 
-        /* ===== REGISTER MODAL — HIDDEN BY DEFAULT ===== */
+        /* ===== REGISTER MODAL ===== */
         #registerModal {
             display: none;
             position: fixed;
@@ -402,7 +402,6 @@
             font-size: 0.4rem;
             opacity: 0.6;
         }
-
         #map .leaflet-control-attribution a {
             color: var(--text-secondary);
             text-decoration: none;
@@ -655,7 +654,7 @@
 <body>
 
     <!-- ============================================================
-    LOGIN OVERLAY — ALWAYS SHOWN FIRST
+    LOGIN OVERLAY — ALWAYS VISIBLE UNTIL AUTHENTICATED
     ============================================================ -->
     <div id="loginOverlay">
         <div class="login-card">
@@ -663,19 +662,16 @@
             <div class="login-title">PELO Data Collection</div>
             <div class="login-subtitle">Community Collection Network</div>
 
-            <!-- Google Sign-in -->
             <button class="btn-login btn-google" onclick="loginWithGoogle()">
                 <i class="fab fa-google" style="font-size:1.1rem;"></i> Sign in with Google
             </button>
 
             <div class="login-divider">or</div>
 
-            <!-- Demo Button -->
             <button class="btn-login btn-demo" onclick="loginAsDemo()">
                 <i class="fas fa-user-astronaut"></i> Continue as Guest (Demo)
             </button>
 
-            <!-- Register Button -->
             <button class="btn-login btn-register" onclick="openRegister()">
                 <i class="fas fa-user-plus"></i> Register New Account
             </button>
@@ -719,7 +715,7 @@
     </div>
 
     <!-- ============================================================
-    MAIN APP — HIDDEN UNTIL LOGIN
+    MAIN APP — HIDDEN UNTIL LOGIN CONFIRMED
     ============================================================ -->
     <div id="appContainer" class="container" style="display:none;">
 
@@ -768,13 +764,11 @@
                     </select>
                 </div>
 
-                <!-- Business / Owner Name -->
                 <div class="form-group">
                     <label>Business / Owner Name <span class="required">*</span></label>
                     <input type="text" id="ownerName" placeholder="e.g. Watville Auto Repairs" required>
                 </div>
 
-                <!-- Contact Person -->
                 <div class="form-row-2">
                     <div class="form-group">
                         <label>Contact Person <span class="required">*</span></label>
@@ -786,7 +780,6 @@
                     </div>
                 </div>
 
-                <!-- Location -->
                 <div class="form-group">
                     <label>Area / Community <span class="required">*</span></label>
                     <input type="text" id="area" placeholder="e.g. Watville, Daveyton" required>
@@ -797,7 +790,6 @@
                     <input type="text" id="address" placeholder="Street address or GPS coordinates">
                 </div>
 
-                <!-- Volume Estimate -->
                 <div class="form-row-3">
                     <div class="form-group">
                         <label>Cooking Oil (L) <span class="required">*</span></label>
@@ -813,7 +805,6 @@
                     </div>
                 </div>
 
-                <!-- Waste Types -->
                 <div class="form-group">
                     <label>Waste Type(s) Collected</label>
                     <select id="wasteType" multiple style="height:80px;">
@@ -831,7 +822,6 @@
                     <span style="font-size:0.5rem; color:var(--text-muted);">Hold Ctrl (Cmd) to select multiple</span>
                 </div>
 
-                <!-- Collection Frequency -->
                 <div class="form-row-2">
                     <div class="form-group">
                         <label>Collection Frequency</label>
@@ -848,7 +838,6 @@
                     </div>
                 </div>
 
-                <!-- Current Disposal -->
                 <div class="form-group">
                     <label>Current Disposal Method</label>
                     <select id="disposalMethod">
@@ -896,7 +885,6 @@
                     </div>
                 </div>
 
-                <!-- Notes -->
                 <div class="form-group">
                     <label>Notes / Observations</label>
                     <textarea id="notes" placeholder="Any additional information..."></textarea>
@@ -967,11 +955,11 @@
     </div>
 
     <!-- ============================================================
-    JAVASCRIPT
+    JAVASCRIPT — GEMINI APPROACH
     ============================================================ -->
     <script>
         // ============================================================
-        // FIREBASE
+        // FIREBASE CONFIG
         // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyD5OB59lG6bAsmQ7A97zXP_MfQ5AM3BYaw",
@@ -996,40 +984,41 @@
         let currentUser = null;
         let isDemo = false;
         let mapInitialized = false;
+        let isAppReady = false;
+
+        // ============================================================
+        // DOM REFS
+        // ============================================================
+        const loginOverlay = document.getElementById('loginOverlay');
+        const appContainer = document.getElementById('appContainer');
+        const loginError = document.getElementById('loginError');
 
         // ============================================================
         // LOGIN FUNCTIONS
         // ============================================================
         function loginWithGoogle() {
-            document.getElementById('loginError').textContent = '⏳ Signing in...';
+            loginError.textContent = '⏳ Signing in...';
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider)
                 .then((result) => {
                     currentUser = result.user;
                     isDemo = false;
-                    document.getElementById('loginOverlay').classList.add('hidden');
-                    document.getElementById('appContainer').style.display = 'block';
-                    document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.email || 'User';
-                    document.getElementById('loginError').textContent = '';
-                    loadEntries();
-                    loadUserData();
-                    setTimeout(initMap, 500);
+                    showApp();
                     showToast('✅ Welcome, ' + (currentUser.displayName || 'User') + '!');
                 })
                 .catch((error) => {
-                    document.getElementById('loginError').textContent = '❌ ' + error.message;
+                    loginError.textContent = '❌ ' + error.message;
                 });
         }
 
         function loginAsDemo() {
-            currentUser = { uid: 'demo_' + Date.now(), displayName: 'Guest User', email: 'guest@pelorecovery.co.za' };
+            currentUser = {
+                uid: 'demo_' + Date.now(),
+                displayName: 'Guest User',
+                email: 'guest@pelorecovery.co.za'
+            };
             isDemo = true;
-            document.getElementById('loginOverlay').classList.add('hidden');
-            document.getElementById('appContainer').style.display = 'block';
-            document.getElementById('userNameDisplay').textContent = '👤 Guest User';
-            document.getElementById('loginError').textContent = '';
-            loadEntries();
-            setTimeout(initMap, 500);
+            showApp();
             showToast('👋 Welcome, Guest! Your data is saved locally.');
         }
 
@@ -1064,14 +1053,14 @@
             .then(() => {
                 document.getElementById('registerError').textContent = '';
                 closeRegister();
-                currentUser = { uid: 'registered_' + email, displayName: name, email: email };
+                currentUser = {
+                    uid: 'registered_' + email,
+                    displayName: name,
+                    email: email
+                };
                 isDemo = true;
-                document.getElementById('loginOverlay').classList.add('hidden');
-                document.getElementById('appContainer').style.display = 'block';
-                document.getElementById('userNameDisplay').textContent = '👤 ' + name;
+                showApp();
                 showToast('✅ Account created! Welcome, ' + name + '!');
-                loadEntries();
-                setTimeout(initMap, 500);
             })
             .catch((error) => {
                 document.getElementById('registerError').textContent = '❌ ' + error.message;
@@ -1082,13 +1071,27 @@
             if (!isDemo) auth.signOut();
             currentUser = null;
             isDemo = false;
-            document.getElementById('loginOverlay').classList.remove('hidden');
-            document.getElementById('appContainer').style.display = 'none';
-            // Reset login error
-            document.getElementById('loginError').textContent = '';
+            isAppReady = false;
+            loginOverlay.classList.remove('hidden');
+            appContainer.style.display = 'none';
+            loginError.textContent = '';
             showToast('👋 Logged out.');
         }
 
+        function showApp() {
+            isAppReady = true;
+            loginOverlay.classList.add('hidden');
+            appContainer.style.display = 'block';
+            document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.email || 'User';
+            loginError.textContent = '';
+            loadEntries();
+            loadUserData();
+            setTimeout(initMap, 600);
+        }
+
+        // ============================================================
+        // LOAD USER DATA
+        // ============================================================
         function loadUserData() {
             if (!currentUser) return;
             const userRef = db.collection('users').doc(currentUser.email || currentUser.uid);
@@ -1547,7 +1550,6 @@
                     attributionControl: true
                 });
 
-                // OSM tiles — no watermark
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OSM',
                     maxZoom: 19,
@@ -1610,7 +1612,7 @@
                 }
 
                 mapInitialized = true;
-                console.log('🗺️ Map initialized (OSM tiles, no watermark)');
+                console.log('🗺️ Map initialized (OSM tiles)');
 
             } catch (error) {
                 console.warn('Map error:', error);
@@ -1699,45 +1701,40 @@
         }
 
         // ============================================================
+        // AUTH STATE — THE GATEKEEPER (GEMINI APPROACH)
+        // ============================================================
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User is signed in
+                currentUser = user;
+                isDemo = false;
+                showApp();
+                console.log('🔐 User authenticated:', user.email);
+            } else {
+                // No user — keep login overlay visible
+                loginOverlay.classList.remove('hidden');
+                appContainer.style.display = 'none';
+                console.log('🔓 No user — login required');
+            }
+        });
+
+        // ============================================================
         // INIT
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            // Check if already authenticated
-            auth.onAuthStateChanged((user) => {
-                if (user) {
-                    currentUser = user;
-                    isDemo = false;
-                    document.getElementById('loginOverlay').classList.add('hidden');
-                    document.getElementById('appContainer').style.display = 'block';
-                    document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.email || 'User';
-                    loadEntries();
-                    loadUserData();
-                    setTimeout(initMap, 600);
-                } else {
-                    // Show login overlay
-                    document.getElementById('loginOverlay').classList.remove('hidden');
-                    document.getElementById('appContainer').style.display = 'none';
-                }
-            });
-
             loadEntries();
             updateOfflineStatus();
 
-            console.log('🚀 PELO Data Collection v2.4');
+            // If user is already signed in, auth.onAuthStateChanged will handle it
+            // If not, login overlay stays visible
+
+            console.log('🚀 PELO Data Collection v2.5 (Gemini Login)');
             console.log('   ⚛️ CHSH S=2.76');
-            console.log('   🔐 Login required — Google, Demo, or Register');
+            console.log('   🔐 Login overlay always visible until auth confirms');
             console.log('   📍 Map: OSM tiles — no watermark');
             console.log('   📧 Data sent to: mindtech.industriesai@gmail.com');
             console.log('   📶 Offline capable — auto-sync when online');
         });
-
-        // Retry map if not loaded
-        setTimeout(function() {
-            if (!mapInitialized && document.getElementById('appContainer').style.display !== 'none') {
-                console.log('🔄 Retrying map...');
-                initMap();
-            }
-        }, 3000);
     </script>
 
 </body>
