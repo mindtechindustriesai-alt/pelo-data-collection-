@@ -8,8 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <!-- Firebase -->
@@ -17,7 +15,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
@@ -35,6 +32,7 @@
             --dark-bg: #05080F;
             --dark-card: #0A0F1A;
             --glass-border: rgba(0,180,216,0.15);
+            --glass-border-light: rgba(0,180,216,0.08);
             --text-primary: #E8EDF5;
             --text-secondary: #8A99B0;
             --text-muted: #4A5A6A;
@@ -61,128 +59,28 @@
             z-index: 1;
         }
 
-        /* ============================================================
-           LOADING SCREEN — ALWAYS FIRST
-        ============================================================ */
-        #loadingScreen {
-            position: fixed;
-            inset: 0;
-            z-index: 99999;
-            background: var(--dark-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            gap: 24px;
-            transition: opacity 0.6s ease;
-        }
-
-        #loadingScreen.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        #loadingScreen .spinner {
-            width: 48px;
-            height: 48px;
-            border: 3px solid rgba(200,164,80,0.1);
-            border-top-color: var(--pelo-gold);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        #loadingScreen .loading-text {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            font-family: var(--font-mono);
-            letter-spacing: 4px;
-            animation: pulseText 1.5s ease-in-out infinite;
-        }
-
-        @keyframes pulseText {
-            0%, 100% { opacity: 0.4; }
-            50% { opacity: 1; }
-        }
-
-        /* ============================================================
-           LOGIN OVERLAY — FIXED
-        ============================================================ */
+        /* ===== LOGIN OVERLAY ===== */
         #loginOverlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(5,8,15,0.98);
+            background: rgba(5,8,15,0.97);
             backdrop-filter: blur(28px);
             -webkit-backdrop-filter: blur(28px);
-            z-index: 9998;
-            padding: 20px;
-            flex-direction: column;
+            z-index: 9999;
+            display: flex;
             align-items: center;
             justify-content: center;
-            transition: opacity 0.6s ease, visibility 0.6s ease;
-            /* Default: hidden */
-            display: none !important;
-            opacity: 0;
-            visibility: hidden;
-        }
-
-        #loginOverlay.visible {
-            display: flex !important;
-            opacity: 1;
-            visibility: visible;
-        }
-
-        #loginOverlay.hidden {
-            display: none !important;
-            opacity: 0;
-            visibility: hidden;
-        }
-
-        /* ============================================================
-           APP CONTAINER — FIXED
-        ============================================================ */
-        #appContainer {
-            display: none !important;
-            opacity: 0;
+            padding: 20px;
+            flex-direction: column;
             transition: opacity 0.6s ease;
         }
 
-        #appContainer.visible {
-            display: block !important;
-            opacity: 1;
-        }
-
-        #appContainer.hidden {
-            display: none !important;
+        #loginOverlay.hidden {
             opacity: 0;
-        }
-
-        /* ============================================================
-           REGISTER MODAL
-        ============================================================ */
-        #registerModal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(5,8,15,0.95);
-            backdrop-filter: blur(20px);
-            z-index: 10000;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        #registerModal.visible {
-            display: flex !important;
+            pointer-events: none;
         }
 
         @keyframes glassPulse {
@@ -241,6 +139,7 @@
             color: var(--text-muted);
             font-size: 0.6rem;
         }
+
         .login-divider::before,
         .login-divider::after {
             content: "";
@@ -272,10 +171,17 @@
             gap: 12px;
             margin-top: 12px;
         }
-        .btn-login:hover { transform: translateY(-2px); filter: brightness(1.05); }
-        .btn-login:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-        .btn-google { background: #4285F4; color: white; box-shadow: 0 4px 15px rgba(66,133,244,0.3); }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
+        }
+
+        .btn-google {
+            background: #4285F4;
+            color: white;
+            box-shadow: 0 4px 15px rgba(66,133,244,0.3);
+        }
         .btn-google:hover { box-shadow: 0 8px 25px rgba(66,133,244,0.5); }
 
         .btn-demo {
@@ -290,9 +196,25 @@
             color: var(--text-primary);
             border: 1px solid var(--glass-border);
         }
-        .btn-register:hover { background: rgba(255,255,255,0.12); border-color: var(--pelo-gold); }
+        .btn-register:hover {
+            background: rgba(255,255,255,0.12);
+            border-color: var(--pelo-gold);
+        }
 
-        /* ===== HEADER ===== */
+        .btn-logout {
+            background: rgba(239,71,111,0.15);
+            border: 1px solid rgba(239,71,111,0.2);
+            color: var(--danger);
+            padding: 6px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-family: var(--font-exo);
+            font-size: 0.6rem;
+            transition: all 0.3s;
+        }
+        .btn-logout:hover { background: rgba(239,71,111,0.25); }
+
+        /* ===== HEADER WITH LOGO ===== */
         .header {
             display: flex;
             align-items: center;
@@ -313,7 +235,10 @@
             flex-shrink: 0;
         }
 
-        .header-text { flex: 1; }
+        .header-text {
+            flex: 1;
+        }
+
         .header-text h1 {
             font-size: 1.1rem;
             font-weight: 800;
@@ -322,6 +247,7 @@
             background-clip: text;
             color: transparent;
         }
+
         .header-text p {
             font-size: 0.5rem;
             color: var(--text-secondary);
@@ -348,6 +274,7 @@
             font-size: 0.65rem;
             color: var(--text-secondary);
         }
+
         .header-user .avatar {
             width: 28px;
             height: 28px;
@@ -361,18 +288,11 @@
             overflow: hidden;
         }
 
-        .btn-logout {
-            background: rgba(239,71,111,0.15);
-            border: 1px solid rgba(239,71,111,0.2);
-            color: var(--danger);
-            padding: 6px 14px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-family: var(--font-exo);
-            font-size: 0.6rem;
-            transition: all 0.3s;
+        .header-user .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
-        .btn-logout:hover { background: rgba(239,71,111,0.25); }
 
         /* ===== GLASS CARD ===== */
         .glass-card {
@@ -448,6 +368,7 @@
 
         .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+        .form-row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
 
         .form-section-title {
             font-size: 0.7rem;
@@ -465,33 +386,18 @@
         /* ===== MAP ===== */
         #map {
             width: 100%;
-            height: 280px;
+            height: 260px;
             border-radius: 14px;
             overflow: hidden;
             border: 1px solid var(--glass-border);
             margin: 10px 0 14px;
             background: #0A0F1A;
-            position: relative;
-            z-index: 10;
         }
-
         #map .leaflet-control-attribution {
-            background: rgba(5,8,15,0.6);
-            color: var(--text-muted);
-            font-size: 0.4rem;
-            opacity: 0.6;
-        }
-        #map .leaflet-control-attribution a {
-            color: var(--text-secondary);
-            text-decoration: none;
-        }
-
-        #map .leaflet-control-zoom a {
             background: rgba(5,8,15,0.8);
-            color: var(--text-primary);
-            border-color: var(--glass-border);
+            color: var(--text-secondary);
+            font-size: 0.45rem;
         }
-
         .map-hint {
             font-size: 0.6rem;
             color: var(--text-secondary);
@@ -499,52 +405,6 @@
             margin-top: 4px;
         }
         .map-hint i { color: var(--pelo-gold); }
-
-        .map-loading {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            flex-direction: column;
-            gap: 12px;
-            background: #0A0F1A;
-        }
-
-        .map-loading i {
-            font-size: 2rem;
-            opacity: 0.3;
-            animation: spin 2s linear infinite;
-        }
-
-        .map-manual-coords {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-top: 8px;
-        }
-
-        .map-manual-coords input {
-            padding: 6px 10px;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            color: white;
-            width: 120px;
-            font-size: 0.75rem;
-        }
-
-        .map-manual-coords button {
-            padding: 6px 16px;
-            background: var(--pelo-gold);
-            border: none;
-            border-radius: 8px;
-            color: #000;
-            font-weight: 600;
-            cursor: pointer;
-        }
 
         /* ===== BUTTONS ===== */
         .btn-primary {
@@ -564,8 +424,8 @@
             justify-content: center;
             gap: 10px;
         }
-        .btn-primary:hover:not(:disabled) { transform: scale(1.01); }
-        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-primary:hover { transform: scale(1.01); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
         .btn-secondary {
             padding: 8px 16px;
@@ -593,7 +453,7 @@
         }
         .btn-danger:hover { background: rgba(239,71,111,0.25); }
 
-        /* ===== ENTRIES ===== */
+        /* ===== SUBMITTED ENTRIES ===== */
         .entries-list {
             margin-top: 12px;
             max-height: 300px;
@@ -610,9 +470,15 @@
             border-left: 3px solid var(--pelo-gold);
             font-size: 0.75rem;
         }
-        .entry-item .entry-info { flex: 1; }
+        .entry-item .entry-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex: 1;
+        }
         .entry-item .entry-info .name { font-weight: 600; color: var(--text-primary); }
         .entry-item .entry-info .details { font-size: 0.6rem; color: var(--text-secondary); }
+        .entry-item .entry-info .location { font-size: 0.55rem; color: var(--text-muted); font-family: var(--font-mono); }
         .entry-item .entry-actions { display: flex; gap: 6px; align-items: center; }
         .entry-item .entry-status {
             font-size: 0.45rem;
@@ -623,7 +489,7 @@
             font-family: var(--font-mono);
         }
 
-        /* ===== OFFLINE ===== */
+        /* ===== OFFLINE INDICATOR ===== */
         .offline-indicator {
             display: none;
             align-items: center;
@@ -637,6 +503,7 @@
             margin-bottom: 12px;
         }
         .offline-indicator.visible { display: flex; }
+        .offline-indicator i { font-size: 0.9rem; }
 
         /* ===== TOAST ===== */
         .toast {
@@ -670,6 +537,7 @@
             margin-top: 20px;
             border-top: 1px solid var(--glass-border);
         }
+
         .footer-logos {
             display: flex;
             justify-content: center;
@@ -678,14 +546,20 @@
             flex-wrap: wrap;
             margin-bottom: 12px;
         }
+
         .footer-logo {
             height: 40px;
             width: auto;
             opacity: 0.7;
             transition: all 0.3s;
+            filter: drop-shadow(0 0 8px rgba(0,180,216,0.05));
             object-fit: contain;
         }
-        .footer-logo:hover { opacity: 1; transform: scale(1.05); }
+        .footer-logo:hover {
+            opacity: 1;
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 12px rgba(0,180,216,0.15));
+        }
 
         .quantum-line {
             font-family: var(--font-mono);
@@ -694,6 +568,7 @@
             letter-spacing: 2px;
             opacity: 0.4;
         }
+
         .footer .copyright {
             font-size: 0.5rem;
             color: var(--text-secondary);
@@ -705,10 +580,12 @@
             .container { padding: 10px; }
             .form-row-2 { grid-template-columns: 1fr; }
             .form-row-3 { grid-template-columns: 1fr 1fr; }
+            .form-row-4 { grid-template-columns: 1fr 1fr; }
             .header { flex-wrap: wrap; }
             .header-badge { margin-left: 0; }
             .glass-card { padding: 16px; }
             #map { height: 200px; }
+            .entry-item { flex-wrap: wrap; gap: 6px; }
             .header-logo { height: 40px; }
             .footer-logo { height: 32px; }
             .login-card { padding: 28px 20px; }
@@ -717,27 +594,20 @@
 
         @media (max-width: 480px) {
             .form-row-3 { grid-template-columns: 1fr; }
+            .form-row-4 { grid-template-columns: 1fr; }
             .header-logo { height: 36px; }
             .header-text h1 { font-size: 0.9rem; }
             .header-badge { font-size: 0.45rem; padding: 2px 10px; }
             .login-title { font-size: 1.3rem; }
             .footer-logo { height: 28px; }
-            .map-manual-coords input { width: 80px; }
+            .footer-logos { gap: 16px; }
         }
     </style>
 </head>
 <body>
 
     <!-- ============================================================
-    LOADING SCREEN — ALWAYS FIRST
-    ============================================================ -->
-    <div id="loadingScreen">
-        <div class="spinner"></div>
-        <div class="loading-text">INITIALIZING SECURE CONNECTION...</div>
-    </div>
-
-    <!-- ============================================================
-    LOGIN OVERLAY — ALWAYS ON TOP
+    LOGIN OVERLAY
     ============================================================ -->
     <div id="loginOverlay">
         <div class="login-card">
@@ -745,20 +615,17 @@
             <div class="login-title">PELO Data Collection</div>
             <div class="login-subtitle">Community Collection Network</div>
 
-            <!-- Google Sign-in -->
-            <button class="btn-login btn-google" id="googleLoginBtn" onclick="loginWithGoogle()">
+            <button class="btn-login btn-google" onclick="loginWithGoogle()">
                 <i class="fab fa-google" style="font-size:1.1rem;"></i> Sign in with Google
             </button>
 
             <div class="login-divider">or</div>
 
-            <!-- Demo Button -->
-            <button class="btn-login btn-demo" id="demoLoginBtn" onclick="loginAsDemo()">
+            <button class="btn-login btn-demo" onclick="loginAsDemo()">
                 <i class="fas fa-user-astronaut"></i> Continue as Guest (Demo)
             </button>
 
-            <!-- Register Button -->
-            <button class="btn-login btn-register" onclick="openRegister()">
+            <button class="btn-login btn-register" onclick="showRegister()">
                 <i class="fas fa-user-plus"></i> Register New Account
             </button>
 
@@ -767,9 +634,9 @@
     </div>
 
     <!-- ============================================================
-    REGISTER MODAL
+    REGISTRATION MODAL (Hidden by default)
     ============================================================ -->
-    <div id="registerModal">
+    <div id="registerModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(5,8,15,0.95); backdrop-filter:blur(20px); z-index:10000; display:none; align-items:center; justify-content:center; padding:20px;">
         <div class="login-card" style="max-width:400px;">
             <h2 style="font-size:1.3rem; margin-bottom:16px; color:var(--pelo-gold);">Create Account</h2>
             <form id="registerForm" onsubmit="registerUser(event)">
@@ -803,9 +670,9 @@
     <!-- ============================================================
     MAIN APP
     ============================================================ -->
-    <div id="appContainer" class="container">
+    <div id="appContainer" class="container" style="display:none;">
 
-        <!-- HEADER -->
+        <!-- ===== HEADER WITH LOGO ===== -->
         <header class="header">
             <img src="https://i.postimg.cc/KvmJMsTk/pelo-transparent-logo.png" alt="PELO Recovery Centre" class="header-logo" onerror="this.src='https://i.postimg.cc/T114NczG/pelo-recovery-image-removebg-preview.png'">
             <div class="header-text">
@@ -819,13 +686,13 @@
             </div>
         </header>
 
-        <!-- OFFLINE INDICATOR -->
+        <!-- ===== OFFLINE INDICATOR ===== -->
         <div class="offline-indicator" id="offlineIndicator">
             <i class="fas fa-wifi"></i>
             <span id="offlineText">You are offline — data will be saved locally and synced when online</span>
         </div>
 
-        <!-- MAIN FORM -->
+        <!-- ===== MAIN FORM ===== -->
         <div class="glass-card">
             <div class="card-header">
                 <i class="fas fa-clipboard-list"></i>
@@ -850,11 +717,13 @@
                     </select>
                 </div>
 
+                <!-- Business / Owner Name -->
                 <div class="form-group">
                     <label>Business / Owner Name <span class="required">*</span></label>
                     <input type="text" id="ownerName" placeholder="e.g. Watville Auto Repairs" required>
                 </div>
 
+                <!-- Contact Person -->
                 <div class="form-row-2">
                     <div class="form-group">
                         <label>Contact Person <span class="required">*</span></label>
@@ -866,16 +735,19 @@
                     </div>
                 </div>
 
+                <!-- Location -->
                 <div class="form-group">
                     <label>Area / Community <span class="required">*</span></label>
-                    <input type="text" id="area" placeholder="e.g. Watville, Daveyton" required>
+                    <input type="text" id="area" placeholder="e.g. Watville, Daveyton, eMalahleni" required>
                 </div>
 
+                <!-- Address -->
                 <div class="form-group">
                     <label>Full Address / GPS</label>
                     <input type="text" id="address" placeholder="Street address or GPS coordinates">
                 </div>
 
+                <!-- Volume Estimate -->
                 <div class="form-row-3">
                     <div class="form-group">
                         <label>Cooking Oil (L) <span class="required">*</span></label>
@@ -891,6 +763,7 @@
                     </div>
                 </div>
 
+                <!-- Waste Types -->
                 <div class="form-group">
                     <label>Waste Type(s) Collected</label>
                     <select id="wasteType" multiple style="height:80px;">
@@ -905,9 +778,10 @@
                         <option value="ewaste">💻 Electronic Waste</option>
                         <option value="other">📌 Other</option>
                     </select>
-                    <span style="font-size:0.5rem; color:var(--text-muted);">Hold Ctrl (Cmd) to select multiple</span>
+                    <span style="font-size:0.55rem; color:var(--text-muted);">Hold Ctrl (Cmd) to select multiple</span>
                 </div>
 
+                <!-- Collection Frequency -->
                 <div class="form-row-2">
                     <div class="form-group">
                         <label>Collection Frequency</label>
@@ -919,11 +793,12 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Monthly Volume (L/kg)</label>
+                        <label>Estimated Monthly Volume (L/kg)</label>
                         <input type="number" id="monthlyVolume" placeholder="e.g. 500" min="0">
                     </div>
                 </div>
 
+                <!-- Current Disposal -->
                 <div class="form-group">
                     <label>Current Disposal Method</label>
                     <select id="disposalMethod">
@@ -971,27 +846,19 @@
                     </div>
                 </div>
 
+                <!-- Notes -->
                 <div class="form-group">
                     <label>Notes / Observations</label>
                     <textarea id="notes" placeholder="Any additional information..."></textarea>
                 </div>
 
-                <!-- MAP -->
-                <div id="map">
-                    <div class="map-loading">
-                        <i class="fas fa-spinner"></i>
-                        <span>Loading map...</span>
-                    </div>
-                </div>
+                <!-- Map -->
+                <div id="map"></div>
                 <div class="map-hint">
                     <i class="fas fa-map-pin"></i> Click on the map to drop a pin — coordinates will be captured
                 </div>
-                <div class="map-manual-coords">
-                    <input type="text" id="manualLat" placeholder="Latitude (e.g. -26.194)">
-                    <input type="text" id="manualLng" placeholder="Longitude (e.g. 28.241)">
-                    <button onclick="setManualCoords()">Set Pin</button>
-                </div>
 
+                <!-- Hidden Coordinates -->
                 <input type="hidden" id="latitude" value="">
                 <input type="hidden" id="longitude" value="">
 
@@ -1006,7 +873,7 @@
             </form>
         </div>
 
-        <!-- SUBMITTED ENTRIES -->
+        <!-- ===== SUBMITTED ENTRIES ===== -->
         <div class="glass-card">
             <div class="card-header">
                 <i class="fas fa-database"></i>
@@ -1027,7 +894,7 @@
             </div>
         </div>
 
-        <!-- FOOTER -->
+        <!-- ===== FOOTER WITH LOGOS ===== -->
         <div class="footer">
             <div class="footer-logos">
                 <img src="https://i.postimg.cc/KvmJMsTk/pelo-transparent-logo.png" alt="PELO Recovery" class="footer-logo" onerror="this.style.display='none'">
@@ -1041,7 +908,7 @@
     </div>
 
     <!-- ============================================================
-    JAVASCRIPT — HYBRID APPROACH FIXED
+    JAVASCRIPT
     ============================================================ -->
     <script>
         // ============================================================
@@ -1069,149 +936,51 @@
         let isOffline = !navigator.onLine;
         let currentUser = null;
         let isDemo = false;
-        let mapInitialized = false;
-        let appVisible = false;
-        let isSubmitting = false;
-        let authReady = false;
-        let mapRetryCount = 0;
-        const MAX_MAP_RETRIES = 5;
 
         // ============================================================
-        // DOM REFS
-        // ============================================================
-        const loadingScreen = document.getElementById('loadingScreen');
-        const loginOverlay = document.getElementById('loginOverlay');
-        const appContainer = document.getElementById('appContainer');
-        const loginError = document.getElementById('loginError');
-
-        // ============================================================
-        // SCREEN MANAGEMENT
-        // ============================================================
-        function showScreen(screen) {
-            // Hide all screens
-            loadingScreen.classList.add('hidden');
-            loginOverlay.classList.remove('visible');
-            loginOverlay.classList.add('hidden');
-            appContainer.classList.remove('visible');
-            appContainer.classList.add('hidden');
-
-            // Show the requested screen
-            if (screen === 'loading') {
-                loadingScreen.classList.remove('hidden');
-            } else if (screen === 'login') {
-                loginOverlay.classList.remove('hidden');
-                loginOverlay.classList.add('visible');
-            } else if (screen === 'app') {
-                appContainer.classList.remove('hidden');
-                appContainer.classList.add('visible');
-            }
-        }
-
-        // ============================================================
-        // AUTH HANDLER — THE GATEKEEPER
-        // ============================================================
-        function handleAuth(user) {
-            authReady = true;
-            
-            if (user) {
-                // User is signed in
-                currentUser = user;
-                isDemo = false;
-                showScreen('app');
-                appVisible = true;
-                
-                const displayName = currentUser.displayName || currentUser.email || 'Guest';
-                document.getElementById('userNameDisplay').textContent = displayName;
-                loginError.textContent = '';
-                
-                loadEntries();
-                loadUserData();
-                setTimeout(initMap, 600);
-                
-                console.log('🔐 User authenticated:', user.email || user.uid);
-            } else {
-                // No user — show login
-                currentUser = null;
-                isDemo = false;
-                appVisible = false;
-                showScreen('login');
-                console.log('🔓 No user — login required');
-            }
-        }
-
-        // ============================================================
-        // LOGIN FUNCTIONS
+        // AUTH FUNCTIONS
         // ============================================================
         function loginWithGoogle() {
-            const btn = document.getElementById('googleLoginBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
-            loginError.textContent = '⏳ Signing in...';
-
+            document.getElementById('loginError').textContent = '⏳ Signing in...';
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider)
                 .then((result) => {
-                    handleAuth(result.user);
-                    showToast('✅ Welcome, ' + (result.user.displayName || 'User') + '!');
+                    currentUser = result.user;
+                    isDemo = false;
+                    document.getElementById('loginOverlay').classList.add('hidden');
+                    document.getElementById('appContainer').style.display = 'block';
+                    document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.email || 'User';
+                    document.getElementById('loginError').textContent = '';
+                    loadEntries();
+                    loadUserData();
+                    showToast('✅ Welcome, ' + (currentUser.displayName || 'User') + '!');
                 })
                 .catch((error) => {
-                    loginError.textContent = '❌ ' + error.message;
-                    showToast('❌ Login failed: ' + error.message, 'error');
-                })
-                .finally(() => {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fab fa-google" style="font-size:1.1rem;"></i> Sign in with Google';
+                    document.getElementById('loginError').textContent = '❌ ' + error.message;
                 });
         }
 
         function loginAsDemo() {
-            const btn = document.getElementById('demoLoginBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
-
-            // Create a demo user
-            const demoUser = {
-                uid: 'demo_' + Date.now(),
-                displayName: 'Guest User',
-                email: 'guest@pelorecovery.co.za',
-                isAnonymous: true,
-                metadata: { creationTime: new Date().toISOString() }
-            };
-            
-            // Simulate auth resolution if not ready
-            if (!authReady) {
-                authReady = true;
-            }
-            
-            currentUser = demoUser;
+            currentUser = { uid: 'demo_' + Date.now(), displayName: 'Guest User', email: 'guest@pelorecovery.co.za' };
             isDemo = true;
-            showScreen('app');
-            appVisible = true;
-            
-            document.getElementById('userNameDisplay').textContent = 'Guest User';
-            loginError.textContent = '';
-            
+            document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('appContainer').style.display = 'block';
+            document.getElementById('userNameDisplay').textContent = '👤 Guest User';
+            document.getElementById('loginError').textContent = '';
             loadEntries();
-            setTimeout(initMap, 600);
-            
             showToast('👋 Welcome, Guest! Your data is saved locally.');
-            
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-user-astronaut"></i> Continue as Guest (Demo)';
         }
 
-        function openRegister() {
-            document.getElementById('registerModal').classList.add('visible');
+        function showRegister() {
+            document.getElementById('registerModal').style.display = 'flex';
         }
 
         function closeRegister() {
-            document.getElementById('registerModal').classList.remove('visible');
-            document.getElementById('registerError').textContent = '';
+            document.getElementById('registerModal').style.display = 'none';
         }
 
         function registerUser(event) {
             event.preventDefault();
-            
             const name = document.getElementById('regName').value.trim();
             const email = document.getElementById('regEmail').value.trim();
             const phone = document.getElementById('regPhone').value.trim();
@@ -1222,10 +991,7 @@
                 return;
             }
 
-            const btn = document.querySelector('#registerForm .btn-primary');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
-
+            // Save to Firestore
             db.collection('users').doc(email).set({
                 name: name,
                 email: email,
@@ -1237,74 +1003,31 @@
             .then(() => {
                 document.getElementById('registerError').textContent = '';
                 closeRegister();
-                
-                // Simulate auth resolution if needed
-                if (!authReady) {
-                    authReady = true;
-                }
-                
-                const registeredUser = {
-                    uid: 'registered_' + email,
-                    displayName: name,
-                    email: email,
-                    isAnonymous: false
-                };
-                
-                currentUser = registeredUser;
+                // Log them in as demo with their details
+                currentUser = { uid: 'registered_' + email, displayName: name, email: email };
                 isDemo = true;
-                showScreen('app');
-                appVisible = true;
-                
-                document.getElementById('userNameDisplay').textContent = name;
-                loginError.textContent = '';
-                
-                loadEntries();
-                setTimeout(initMap, 600);
-                
+                document.getElementById('loginOverlay').classList.add('hidden');
+                document.getElementById('appContainer').style.display = 'block';
+                document.getElementById('userNameDisplay').textContent = '👤 ' + name;
                 showToast('✅ Account created! Welcome, ' + name + '!');
+                loadEntries();
             })
             .catch((error) => {
                 document.getElementById('registerError').textContent = '❌ ' + error.message;
-                showToast('❌ Registration failed: ' + error.message, 'error');
-            })
-            .finally(() => {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
             });
         }
 
         function logout() {
-            if (isDemo) {
-                currentUser = null;
-                isDemo = false;
-                appVisible = false;
-                showScreen('login');
-                showToast('👋 Logged out.');
-                return;
+            if (!isDemo) {
+                auth.signOut();
             }
-
-            auth.signOut()
-                .then(() => {
-                    currentUser = null;
-                    isDemo = false;
-                    appVisible = false;
-                    showScreen('login');
-                    showToast('👋 Logged out.');
-                })
-                .catch((error) => {
-                    // Fallback logout
-                    currentUser = null;
-                    isDemo = false;
-                    appVisible = false;
-                    showScreen('login');
-                    showToast('👋 Logged out.');
-                    console.warn('Logout error:', error);
-                });
+            currentUser = null;
+            isDemo = false;
+            document.getElementById('loginOverlay').classList.remove('hidden');
+            document.getElementById('appContainer').style.display = 'none';
+            showToast('👋 Logged out.');
         }
 
-        // ============================================================
-        // LOAD USER DATA
-        // ============================================================
         function loadUserData() {
             if (!currentUser) return;
             const userRef = db.collection('users').doc(currentUser.email || currentUser.uid);
@@ -1317,7 +1040,7 @@
         }
 
         // ============================================================
-        // OFFLINE
+        // OFFLINE DETECTION
         // ============================================================
         function updateOfflineStatus() {
             isOffline = !navigator.onLine;
@@ -1339,7 +1062,7 @@
         window.addEventListener('offline', updateOfflineStatus);
 
         // ============================================================
-        // LOAD / SAVE ENTRIES
+        // LOAD ENTRIES FROM LOCALSTORAGE
         // ============================================================
         function loadEntries() {
             try {
@@ -1427,7 +1150,7 @@
         }
 
         // ============================================================
-        // SYNC
+        // SYNC ENTRIES
         // ============================================================
         function syncEntries() {
             const pending = entries.filter(e => !e.synced);
@@ -1462,126 +1185,105 @@
         // ============================================================
         function submitEntry(event) {
             event.preventDefault();
-            
-            if (isSubmitting) return;
-            isSubmitting = true;
 
-            const submitBtn = document.getElementById('submitBtn');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            const siteType = document.getElementById('siteType').value;
+            const ownerName = document.getElementById('ownerName').value.trim();
+            const contactPerson = document.getElementById('contactPerson').value.trim();
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const area = document.getElementById('area').value.trim();
+            const address = document.getElementById('address').value.trim();
+            const oilVolume = document.getElementById('oilVolume').value;
+            const engineOil = document.getElementById('engineOil').value || 0;
+            const otherVolume = document.getElementById('otherVolume').value || 0;
+            const wasteType = document.getElementById('wasteType');
+            const wasteTypes = Array.from(wasteType.selectedOptions).map(opt => opt.value);
+            const collectionFrequency = document.getElementById('collectionFrequency').value;
+            const monthlyVolume = document.getElementById('monthlyVolume').value || 0;
+            const disposalMethod = document.getElementById('disposalMethod').value;
+            const notes = document.getElementById('notes').value.trim();
+            const latitude = document.getElementById('latitude').value;
+            const longitude = document.getElementById('longitude').value;
 
-            try {
-                const siteType = document.getElementById('siteType').value;
-                const ownerName = document.getElementById('ownerName').value.trim();
-                const contactPerson = document.getElementById('contactPerson').value.trim();
-                const phoneNumber = document.getElementById('phoneNumber').value.trim();
-                const area = document.getElementById('area').value.trim();
-                const address = document.getElementById('address').value.trim();
-                const oilVolume = document.getElementById('oilVolume').value;
-                const engineOil = document.getElementById('engineOil').value || 0;
-                const otherVolume = document.getElementById('otherVolume').value || 0;
-                const wasteType = document.getElementById('wasteType');
-                const wasteTypes = Array.from(wasteType.selectedOptions).map(opt => opt.value);
-                const collectionFrequency = document.getElementById('collectionFrequency').value;
-                const monthlyVolume = document.getElementById('monthlyVolume').value || 0;
-                const disposalMethod = document.getElementById('disposalMethod').value;
-                const notes = document.getElementById('notes').value.trim();
-                const latitude = document.getElementById('latitude').value;
-                const longitude = document.getElementById('longitude').value;
+            const whatsappGroup = document.getElementById('whatsappGroup').value.trim();
+            const whatsappAdmin = document.getElementById('whatsappAdmin').value.trim();
+            const securityCompany = document.getElementById('securityCompany').value.trim();
+            const securityContact = document.getElementById('securityContact').value.trim();
+            const policeStation = document.getElementById('policeStation').value.trim();
+            const policeWard = document.getElementById('policeWard').value.trim();
 
-                const whatsappGroup = document.getElementById('whatsappGroup').value.trim();
-                const whatsappAdmin = document.getElementById('whatsappAdmin').value.trim();
-                const securityCompany = document.getElementById('securityCompany').value.trim();
-                const securityContact = document.getElementById('securityContact').value.trim();
-                const policeStation = document.getElementById('policeStation').value.trim();
-                const policeWard = document.getElementById('policeWard').value.trim();
-
-                if (!ownerName || !contactPerson || !phoneNumber || !area || !oilVolume) {
-                    showToast('⚠️ Please fill in all required fields.', 'error');
-                    isSubmitting = false;
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
-                    return;
-                }
-
-                const entry = {
-                    id: Date.now(),
-                    siteType,
-                    ownerName,
-                    contactPerson,
-                    phone: phoneNumber,
-                    area,
-                    address,
-                    oilVolume: parseInt(oilVolume) || 0,
-                    engineOil: parseInt(engineOil) || 0,
-                    otherVolume: parseInt(otherVolume) || 0,
-                    wasteTypes,
-                    collectionFrequency,
-                    monthlyVolume: parseInt(monthlyVolume) || 0,
-                    disposalMethod,
-                    notes,
-                    latitude,
-                    longitude,
-                    whatsappGroup,
-                    whatsappAdmin,
-                    securityCompany,
-                    securityContact,
-                    policeStation,
-                    policeWard,
-                    userId: currentUser ? currentUser.uid : 'anonymous',
-                    userName: currentUser ? currentUser.displayName || currentUser.email : 'Guest',
-                    timestamp: new Date().toISOString(),
-                    chsh_s: '2.76',
-                    patent: 'SA 2026/05142',
-                    status: 'submitted',
-                    synced: false
-                };
-
-                entries.push(entry);
-                saveEntries();
-
-                if (!isOffline) {
-                    submitToEmail(entry, function(success) {
-                        if (success) {
-                            entry.synced = true;
-                            saveEntries();
-                        }
-                    });
-                } else {
-                    showToast('📶 You are offline. Entry saved locally. Will sync when online.', 'info');
-                }
-
-                // Reset form
-                document.getElementById('dataForm').reset();
-                document.getElementById('latitude').value = '';
-                document.getElementById('longitude').value = '';
-                document.getElementById('oilVolume').value = '';
-                document.getElementById('engineOil').value = '';
-                document.getElementById('otherVolume').value = '';
-                document.getElementById('monthlyVolume').value = '';
-                document.getElementById('notes').value = '';
-                document.getElementById('whatsappGroup').value = '';
-                document.getElementById('whatsappAdmin').value = '';
-                document.getElementById('securityCompany').value = '';
-                document.getElementById('securityContact').value = '';
-                document.getElementById('policeStation').value = '';
-                document.getElementById('policeWard').value = '';
-
-                if (marker && map) {
-                    map.removeLayer(marker);
-                    marker = null;
-                }
-
-                showToast('✅ Entry submitted! Quantum-verified data saved.', 'success');
-            } catch (error) {
-                console.error('Submit error:', error);
-                showToast('❌ Error submitting entry: ' + error.message, 'error');
-            } finally {
-                isSubmitting = false;
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Submit Entry';
+            if (!ownerName || !contactPerson || !phoneNumber || !area || !oilVolume) {
+                showToast('⚠️ Please fill in all required fields.', 'error');
+                return;
             }
+
+            const entry = {
+                id: Date.now(),
+                siteType,
+                ownerName,
+                contactPerson,
+                phone: phoneNumber,
+                area,
+                address,
+                oilVolume: parseInt(oilVolume) || 0,
+                engineOil: parseInt(engineOil) || 0,
+                otherVolume: parseInt(otherVolume) || 0,
+                wasteTypes,
+                collectionFrequency,
+                monthlyVolume: parseInt(monthlyVolume) || 0,
+                disposalMethod,
+                notes,
+                latitude,
+                longitude,
+                whatsappGroup,
+                whatsappAdmin,
+                securityCompany,
+                securityContact,
+                policeStation,
+                policeWard,
+                userId: currentUser ? currentUser.uid : 'anonymous',
+                userName: currentUser ? currentUser.displayName || currentUser.email : 'Guest',
+                timestamp: new Date().toISOString(),
+                chsh_s: '2.76',
+                patent: 'SA 2026/05142',
+                status: 'submitted',
+                synced: false
+            };
+
+            entries.push(entry);
+            saveEntries();
+
+            if (!isOffline) {
+                submitToEmail(entry, function(success) {
+                    if (success) {
+                        entry.synced = true;
+                        saveEntries();
+                    }
+                });
+            } else {
+                showToast('📶 You are offline. Entry saved locally. Will sync when online.', 'info');
+            }
+
+            document.getElementById('dataForm').reset();
+            document.getElementById('latitude').value = '';
+            document.getElementById('longitude').value = '';
+            document.getElementById('oilVolume').value = '';
+            document.getElementById('engineOil').value = '';
+            document.getElementById('otherVolume').value = '';
+            document.getElementById('monthlyVolume').value = '';
+            document.getElementById('notes').value = '';
+            document.getElementById('whatsappGroup').value = '';
+            document.getElementById('whatsappAdmin').value = '';
+            document.getElementById('securityCompany').value = '';
+            document.getElementById('securityContact').value = '';
+            document.getElementById('policeStation').value = '';
+            document.getElementById('policeWard').value = '';
+
+            if (marker) {
+                map.removeLayer(marker);
+                marker = null;
+            }
+
+            showToast('✅ Entry submitted! Quantum-verified data saved.', 'success');
         }
 
         // ============================================================
@@ -1644,34 +1346,13 @@
                 document.body.appendChild(iframe);
                 document.body.appendChild(form);
 
-                let completed = false;
-
-                iframe.onload = function() {
-                    if (!completed) {
-                        completed = true;
-                        setTimeout(() => {
-                            try {
-                                if (form.parentNode) document.body.removeChild(form);
-                                if (iframe.parentNode) document.body.removeChild(iframe);
-                            } catch(e) {}
-                            if (callback) callback(true);
-                        }, 500);
-                    }
-                };
-
                 form.submit();
 
-                // Fallback timeout
                 setTimeout(() => {
-                    if (!completed) {
-                        completed = true;
-                        try {
-                            if (form.parentNode) document.body.removeChild(form);
-                            if (iframe.parentNode) document.body.removeChild(iframe);
-                        } catch(e) {}
-                        if (callback) callback(true);
-                    }
-                }, 10000);
+                    document.body.removeChild(form);
+                    document.body.removeChild(iframe);
+                    if (callback) callback(true);
+                }, 3000);
 
             } catch(e) {
                 console.warn('Email submit error:', e);
@@ -1680,7 +1361,7 @@
         }
 
         // ============================================================
-        // DELETE / CLEAR / EXPORT
+        // DELETE ENTRY
         // ============================================================
         function deleteEntry(index) {
             if (confirm('Delete this entry?')) {
@@ -1690,6 +1371,9 @@
             }
         }
 
+        // ============================================================
+        // CLEAR ALL ENTRIES
+        // ============================================================
         function clearAllEntries() {
             if (entries.length === 0) {
                 showToast('No entries to clear.', 'info');
@@ -1702,6 +1386,9 @@
             }
         }
 
+        // ============================================================
+        // EXPORT CSV
+        // ============================================================
         function exportCSV() {
             if (entries.length === 0) {
                 showToast('⚠️ No entries to export.', 'error');
@@ -1766,65 +1453,17 @@
         }
 
         // ============================================================
-        // MAP — NO WATERMARK, WITH RETRY
+        // MAP
         // ============================================================
         function initMap() {
             const container = document.getElementById('map');
 
-            if (map) {
-                try {
-                    map.remove();
-                    map = null;
-                } catch(e) {}
-            }
-            if (marker) {
-                marker = null;
-            }
-
-            if (mapRetryCount >= MAX_MAP_RETRIES) {
-                container.innerHTML = `
-                    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:0.75rem;flex-direction:column;gap:10px;padding:20px;text-align:center;">
-                        <i class="fas fa-map" style="font-size:2rem;opacity:0.3;"></i>
-                        <p>Map could not load. Use the manual coordinates below.</p>
-                        <p style="font-size:0.6rem;color:var(--text-muted);">Enter latitude and longitude, then click "Set Pin"</p>
-                    </div>
-                `;
-                return;
-            }
-
-            if (typeof L === 'undefined') {
-                mapRetryCount++;
-                console.warn(`Leaflet not loaded, retrying... (${mapRetryCount}/${MAX_MAP_RETRIES})`);
-                container.innerHTML = `
-                    <div class="map-loading">
-                        <i class="fas fa-spinner"></i>
-                        <span>Loading map library... (${mapRetryCount}/${MAX_MAP_RETRIES})</span>
-                    </div>
-                `;
-                setTimeout(initMap, 1500 * mapRetryCount);
-                return;
-            }
-
             try {
-                const defaultLat = -26.194;
-                const defaultLng = 28.241;
-
-                map = L.map(container, {
-                    center: [defaultLat, defaultLng],
-                    zoom: 14,
-                    zoomControl: true,
-                    fadeAnimation: true,
-                    attributionControl: true
-                });
+                map = L.map('map').setView([-26.194, 28.241], 13);
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OSM',
-                    maxZoom: 19,
-                    subdomains: 'abc'
-                }).addTo(map);
-
-                L.control.zoom({
-                    position: 'topright'
+                    attribution: '&copy; OpenStreetMap contributors',
+                    maxZoom: 19
                 }).addTo(map);
 
                 map.on('click', function(e) {
@@ -1835,120 +1474,40 @@
                         map.removeLayer(marker);
                     }
 
-                    marker = L.marker([lat, lng], {
-                        draggable: true
-                    }).addTo(map);
-
+                    marker = L.marker([lat, lng]).addTo(map);
                     marker.bindPopup(`📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`).openPopup();
 
                     document.getElementById('latitude').value = lat.toFixed(6);
                     document.getElementById('longitude').value = lng.toFixed(6);
-                    document.getElementById('manualLat').value = lat.toFixed(6);
-                    document.getElementById('manualLng').value = lng.toFixed(6);
 
-                    marker.on('dragend', function() {
-                        const pos = marker.getLatLng();
-                        document.getElementById('latitude').value = pos.lat.toFixed(6);
-                        document.getElementById('longitude').value = pos.lng.toFixed(6);
-                        document.getElementById('manualLat').value = pos.lat.toFixed(6);
-                        document.getElementById('manualLng').value = pos.lng.toFixed(6);
-                        showToast('📍 Pin moved! Coordinates updated.', 'info');
-                    });
-
-                    showToast('📍 Pin dropped! Coordinates captured.', 'success');
+                    showToast('📍 Pin dropped! Coordinates captured.', 'info');
                 });
 
-                // Geolocation
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        function(position) {
-                            const lat = position.coords.latitude;
-                            const lng = position.coords.longitude;
-                            map.setView([lat, lng], 15);
-                            const userMarker = L.circleMarker([lat, lng], {
-                                radius: 8,
-                                fillColor: '#00B4D8',
-                                color: '#00F5D4',
-                                weight: 2,
-                                fillOpacity: 0.6
-                            }).addTo(map);
-                            userMarker.bindPopup('📌 Your location').openPopup();
-                        },
-                        function() {},
-                        { enableHighAccuracy: true, timeout: 10000 }
-                    );
-                }
-
-                mapInitialized = true;
-                mapRetryCount = 0;
-                console.log('🗺️ Map initialized (OSM tiles)');
+                console.log('🗺️ Map initialized');
 
             } catch (error) {
                 console.warn('Map error:', error);
-                mapRetryCount++;
                 container.innerHTML = `
-                    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:0.75rem;flex-direction:column;gap:10px;padding:20px;text-align:center;">
-                        <i class="fas fa-map" style="font-size:2rem;opacity:0.3;"></i>
-                        <p>Map could not load. Use the manual coordinates below.</p>
-                        <p style="font-size:0.6rem;color:var(--text-muted);">Enter latitude and longitude, then click "Set Pin"</p>
+                    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:0.75rem;flex-direction:column;gap:10px;">
+                        <i class="fas fa-map" style="font-size:1.8rem;opacity:0.3;"></i>
+                        <p>Map loading... Click below to add coordinates manually.</p>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+                            <input type="text" id="manualLat" placeholder="Latitude" style="padding:6px 10px;background:rgba(0,0,0,0.3);border:1px solid var(--glass-border);border-radius:8px;color:white;width:100px;">
+                            <input type="text" id="manualLng" placeholder="Longitude" style="padding:6px 10px;background:rgba(0,0,0,0.3);border:1px solid var(--glass-border);border-radius:8px;color:white;width:100px;">
+                            <button onclick="setManualCoords()" style="padding:6px 14px;background:var(--pelo-gold);border:none;border-radius:8px;color:#000;font-weight:600;cursor:pointer;">Set</button>
+                        </div>
                     </div>
                 `;
             }
         }
 
         function setManualCoords() {
-            const latInput = document.getElementById('manualLat');
-            const lngInput = document.getElementById('manualLng');
-
-            if (!latInput || !lngInput) {
-                showToast('⚠️ Manual coordinate inputs not found.', 'error');
-                return;
-            }
-
-            const lat = latInput.value.trim();
-            const lng = lngInput.value.trim();
-
-            if (!lat || !lng) {
-                showToast('⚠️ Please enter both latitude and longitude.', 'error');
-                return;
-            }
-
-            const latNum = parseFloat(lat);
-            const lngNum = parseFloat(lng);
-
-            if (isNaN(latNum) || isNaN(lngNum) || latNum < -90 || latNum > 90 || lngNum < -180 || lngNum > 180) {
-                showToast('⚠️ Invalid coordinates. Please enter valid lat/lng.', 'error');
-                return;
-            }
-
-            document.getElementById('latitude').value = latNum.toFixed(6);
-            document.getElementById('longitude').value = lngNum.toFixed(6);
-
-            if (map && mapInitialized) {
-                if (marker) {
-                    map.removeLayer(marker);
-                }
-
-                marker = L.marker([latNum, lngNum], {
-                    draggable: true
-                }).addTo(map);
-
-                marker.bindPopup(`📍 ${latNum.toFixed(6)}, ${lngNum.toFixed(6)}`).openPopup();
-                map.setView([latNum, lngNum], 14);
-
-                marker.on('dragend', function() {
-                    const pos = marker.getLatLng();
-                    document.getElementById('latitude').value = pos.lat.toFixed(6);
-                    document.getElementById('longitude').value = pos.lng.toFixed(6);
-                    document.getElementById('manualLat').value = pos.lat.toFixed(6);
-                    document.getElementById('manualLng').value = pos.lng.toFixed(6);
-                    showToast('📍 Pin moved! Coordinates updated.', 'info');
-                });
-
-                showToast('📍 Pin set manually! Coordinates captured.', 'success');
-            } else {
-                showToast('📍 Coordinates stored. Map will show pin when loaded.', 'info');
-                setTimeout(initMap, 500);
+            const lat = document.getElementById('manualLat')?.value;
+            const lng = document.getElementById('manualLng')?.value;
+            if (lat && lng) {
+                document.getElementById('latitude').value = lat;
+                document.getElementById('longitude').value = lng;
+                showToast('📍 Coordinates set manually.', 'info');
             }
         }
 
@@ -1971,54 +1530,33 @@
         }
 
         // ============================================================
-        // AUTH STATE — THE GATEKEEPER WITH LOADING STATE
-        // ============================================================
-        // Listen for auth state changes
-        auth.onAuthStateChanged(function(user) {
-            handleAuth(user);
-        });
-
-        // ============================================================
-        // TIMEOUT FALLBACK — prevents infinite loading
-        // ============================================================
-        let authCheckInterval = 0;
-        const MAX_WAIT_TIME = 4000; // 4 seconds max wait
-        
-        function checkAuthTimeout() {
-            authCheckInterval += 100;
-            if (authCheckInterval >= MAX_WAIT_TIME) {
-                // Auth hasn't resolved — show login
-                if (!authReady) {
-                    console.warn('⚠️ Auth timeout after ' + MAX_WAIT_TIME + 'ms — showing login');
-                    showScreen('login');
-                    authReady = true;
-                }
-            } else {
-                setTimeout(checkAuthTimeout, 100);
-            }
-        }
-        
-        // Start timeout check
-        setTimeout(checkAuthTimeout, 100);
-
-        // ============================================================
         // INIT
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is already logged in
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUser = user;
+                    isDemo = false;
+                    document.getElementById('loginOverlay').classList.add('hidden');
+                    document.getElementById('appContainer').style.display = 'block';
+                    document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.email || 'User';
+                    loadEntries();
+                    loadUserData();
+                }
+            });
+
+            initMap();
             loadEntries();
             updateOfflineStatus();
 
-            // Show loading initially
-            showScreen('loading');
-
-            console.log('🚀 PELO Data Collection v3.0 (Hybrid Login Fix)');
+            console.log('🚀 PELO Data Collection v2.0');
             console.log('   ⚛️ CHSH S=2.76');
-            console.log('   🔐 Loading screen prevents login flash');
-            console.log('   ⏱️ Auth timeout: ' + MAX_WAIT_TIME + 'ms');
-            console.log('   📍 Map: OSM tiles — no watermark');
+            console.log('   🔐 Google Sign-in + Registration + Demo');
+            console.log('   📍 Map enabled — click to drop pins');
             console.log('   📧 Data sent to: mindtech.industriesai@gmail.com');
+            console.log('   💬 Community Safety Contacts included');
             console.log('   📶 Offline capable — auto-sync when online');
-            console.log('   🔄 Map retry: ' + MAX_MAP_RETRIES + ' attempts');
         });
     </script>
 
