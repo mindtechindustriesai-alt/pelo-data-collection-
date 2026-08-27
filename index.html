@@ -9,15 +9,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- Leaflet CSS - Primary CDN -->
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Leaflet CSS - Fallback CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 
     <style>
         /* ===== RESET & BASE ===== */
@@ -357,7 +360,7 @@
         }
         .form-section-title i { font-size: 0.9rem; }
 
-        /* ===== MAP ===== */
+        /* ===== MAP — FIXED ===== */
         #map {
             width: 100%;
             height: 280px;
@@ -367,6 +370,7 @@
             margin: 10px 0 14px;
             background: #0A0F1A;
             position: relative;
+            z-index: 10;
         }
 
         #map .leaflet-control-attribution {
@@ -398,6 +402,7 @@
             font-size: 0.85rem;
             flex-direction: column;
             gap: 12px;
+            background: #0A0F1A;
         }
 
         .map-loading i {
@@ -614,6 +619,7 @@
             .header-badge { font-size: 0.45rem; padding: 2px 10px; }
             .login-title { font-size: 1.3rem; }
             .footer-logo { height: 28px; }
+            .map-manual-coords input { width: 80px; }
         }
     </style>
 </head>
@@ -855,7 +861,7 @@
                     <textarea id="notes" placeholder="Any additional information..."></textarea>
                 </div>
 
-                <!-- MAP -->
+                <!-- ===== MAP — FIXED ===== -->
                 <div id="map">
                     <div class="map-loading">
                         <i class="fas fa-spinner"></i>
@@ -919,7 +925,7 @@
     </div>
 
     <!-- ============================================================
-    JAVASCRIPT
+    JAVASCRIPT — MAP FIXED
     ============================================================ -->
     <script>
         // ============================================================
@@ -948,7 +954,6 @@
         let currentUser = null;
         let isDemo = false;
         let mapInitialized = false;
-        let mapRetryCount = 0;
 
         // ============================================================
         // AUTH FUNCTIONS
@@ -966,7 +971,7 @@
                     document.getElementById('loginError').textContent = '';
                     loadEntries();
                     loadUserData();
-                    initMap();
+                    setTimeout(initMap, 500);
                     showToast('✅ Welcome, ' + (currentUser.displayName || 'User') + '!');
                 })
                 .catch((error) => {
@@ -982,7 +987,7 @@
             document.getElementById('userNameDisplay').textContent = '👤 Guest User';
             document.getElementById('loginError').textContent = '';
             loadEntries();
-            initMap();
+            setTimeout(initMap, 500);
             showToast('👋 Welcome, Guest! Your data is saved locally.');
         }
 
@@ -1024,7 +1029,7 @@
                 document.getElementById('userNameDisplay').textContent = '👤 ' + name;
                 showToast('✅ Account created! Welcome, ' + name + '!');
                 loadEntries();
-                initMap();
+                setTimeout(initMap, 500);
             })
             .catch((error) => {
                 document.getElementById('registerError').textContent = '❌ ' + error.message;
@@ -1459,102 +1464,98 @@
         }
 
         // ============================================================
-        // MAP — FIXED VERSION
+        // MAP — FIXED (copied from Khensani AI)
         // ============================================================
         function initMap() {
             const container = document.getElementById('map');
-            const mapElement = container;
 
-            // If map is already initialized, clean it up
-            if (mapInitialized && map) {
+            // If map already exists, clean it up
+            if (map) {
                 try {
                     map.remove();
+                    map = null;
                 } catch(e) {}
-                map = null;
+            }
+            if (marker) {
                 marker = null;
-                mapInitialized = false;
             }
 
-            // Show loading state
-            mapElement.innerHTML = `
-                <div class="map-loading">
-                    <i class="fas fa-spinner"></i>
-                    <span>Loading map...</span>
-                </div>
-            `;
+            // Check if Leaflet is loaded
+            if (typeof L === 'undefined') {
+                console.warn('Leaflet not loaded, retrying...');
+                container.innerHTML = `
+                    <div class="map-loading">
+                        <i class="fas fa-spinner"></i>
+                        <span>Loading map library...</span>
+                    </div>
+                `;
+                setTimeout(initMap, 1000);
+                return;
+            }
 
             try {
-                // Wait for Leaflet to be available
-                if (typeof L === 'undefined') {
-                    console.warn('Leaflet not loaded, retrying...');
-                    mapRetryCount++;
-                    if (mapRetryCount < 3) {
-                        setTimeout(initMap, 1000);
-                    } else {
-                        showManualFallback();
-                    }
-                    return;
-                }
+                // Set default view (Watville/Daveyton area)
+                const defaultLat = -26.194;
+                const defaultLng = 28.241;
 
-                // Initialize map with default view (Watville/Daveyton area)
-                map = L.map(mapElement, {
-                    center: [-26.194, 28.241],
-                    zoom: 13,
+                // Initialize map
+                map = L.map(container, {
+                    center: [defaultLat, defaultLng],
+                    zoom: 14,
                     zoomControl: true,
                     fadeAnimation: true,
                     attributionControl: true
                 });
 
-                // Add tile layer with error handling
-                const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; OpenStreetMap contributors',
-                    maxZoom: 19,
-                    errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+/HgAFhAJ/wlseLgAAAABJRU5ErkJggg=='
-                });
+                // Add dark tile layer
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; OpenStreetMap',
+                    subdomains: 'abcd',
+                    maxZoom: 19
+                }).addTo(map);
 
-                tileLayer.on('load', function() {
-                    console.log('✅ Map tiles loaded');
-                });
+                // Add zoom control
+                L.control.zoom({
+                    position: 'topright'
+                }).addTo(map);
 
-                tileLayer.on('tileerror', function() {
-                    console.warn('Tile error, using fallback');
-                });
-
-                tileLayer.addTo(map);
-
-                // Handle map click for pin dropping
+                // Handle click to drop pin
                 map.on('click', function(e) {
                     const lat = e.latlng.lat;
                     const lng = e.latlng.lng;
 
+                    // Remove existing marker
                     if (marker) {
                         map.removeLayer(marker);
                     }
 
+                    // Create draggable marker
                     marker = L.marker([lat, lng], {
                         draggable: true
                     }).addTo(map);
 
                     marker.bindPopup(`📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`).openPopup();
 
-                    // Allow dragging to adjust position
+                    // Update hidden fields
+                    document.getElementById('latitude').value = lat.toFixed(6);
+                    document.getElementById('longitude').value = lng.toFixed(6);
+
+                    // Update manual inputs
+                    document.getElementById('manualLat').value = lat.toFixed(6);
+                    document.getElementById('manualLng').value = lng.toFixed(6);
+
+                    // Handle drag
                     marker.on('dragend', function() {
                         const pos = marker.getLatLng();
                         document.getElementById('latitude').value = pos.lat.toFixed(6);
                         document.getElementById('longitude').value = pos.lng.toFixed(6);
+                        document.getElementById('manualLat').value = pos.lat.toFixed(6);
+                        document.getElementById('manualLng').value = pos.lng.toFixed(6);
                         showToast('📍 Pin moved! Coordinates updated.', 'info');
                     });
 
-                    document.getElementById('latitude').value = lat.toFixed(6);
-                    document.getElementById('longitude').value = lng.toFixed(6);
-
-                    showToast('📍 Pin dropped! Coordinates captured.', 'info');
+                    showToast('📍 Pin dropped! Coordinates captured.', 'success');
                 });
-
-                // Add zoom control
-                L.control.zoom({
-                    position: 'topright'
-                }).addTo(map);
 
                 // Try to get user location
                 if (navigator.geolocation) {
@@ -1563,7 +1564,7 @@
                             const lat = position.coords.latitude;
                             const lng = position.coords.longitude;
                             map.setView([lat, lng], 15);
-                            // Add a small marker for user location
+                            // Add user location marker
                             const userMarker = L.circleMarker([lat, lng], {
                                 radius: 8,
                                 fillColor: '#00B4D8',
@@ -1582,34 +1583,31 @@
                 }
 
                 mapInitialized = true;
-                mapRetryCount = 0;
                 console.log('🗺️ Map initialized successfully');
 
             } catch (error) {
                 console.warn('Map initialization error:', error);
-                mapRetryCount++;
-                if (mapRetryCount < 3) {
-                    setTimeout(initMap, 1500);
-                } else {
-                    showManualFallback();
-                }
+                container.innerHTML = `
+                    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:0.75rem;flex-direction:column;gap:10px;padding:20px;text-align:center;">
+                        <i class="fas fa-map" style="font-size:2rem;opacity:0.3;"></i>
+                        <p>Map could not load. Use the manual coordinates below.</p>
+                        <p style="font-size:0.6rem;color:var(--text-muted);">Enter latitude and longitude, then click "Set Pin"</p>
+                    </div>
+                `;
             }
         }
 
-        function showManualFallback() {
-            const container = document.getElementById('map');
-            container.innerHTML = `
-                <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:0.75rem;flex-direction:column;gap:10px;padding:20px;text-align:center;">
-                    <i class="fas fa-map" style="font-size:2rem;opacity:0.3;"></i>
-                    <p>Map could not load. Use the manual coordinates below.</p>
-                    <p style="font-size:0.6rem;color:var(--text-muted);">Enter latitude and longitude, then click "Set Pin"</p>
-                </div>
-            `;
-        }
-
         function setManualCoords() {
-            const lat = document.getElementById('manualLat')?.value.trim();
-            const lng = document.getElementById('manualLng')?.value.trim();
+            const latInput = document.getElementById('manualLat');
+            const lngInput = document.getElementById('manualLng');
+
+            if (!latInput || !lngInput) {
+                showToast('⚠️ Manual coordinate inputs not found.', 'error');
+                return;
+            }
+
+            const lat = latInput.value.trim();
+            const lng = lngInput.value.trim();
 
             if (!lat || !lng) {
                 showToast('⚠️ Please enter both latitude and longitude.', 'error');
@@ -1624,15 +1622,20 @@
                 return;
             }
 
+            // Update hidden fields
             document.getElementById('latitude').value = latNum.toFixed(6);
             document.getElementById('longitude').value = lngNum.toFixed(6);
 
             // If map exists, add marker
-            if (mapInitialized && map) {
+            if (map && mapInitialized) {
                 if (marker) {
                     map.removeLayer(marker);
                 }
-                marker = L.marker([latNum, lngNum], { draggable: true }).addTo(map);
+
+                marker = L.marker([latNum, lngNum], {
+                    draggable: true
+                }).addTo(map);
+
                 marker.bindPopup(`📍 ${latNum.toFixed(6)}, ${lngNum.toFixed(6)}`).openPopup();
                 map.setView([latNum, lngNum], 14);
 
@@ -1640,11 +1643,18 @@
                     const pos = marker.getLatLng();
                     document.getElementById('latitude').value = pos.lat.toFixed(6);
                     document.getElementById('longitude').value = pos.lng.toFixed(6);
+                    document.getElementById('manualLat').value = pos.lat.toFixed(6);
+                    document.getElementById('manualLng').value = pos.lng.toFixed(6);
                     showToast('📍 Pin moved! Coordinates updated.', 'info');
                 });
-            }
 
-            showToast('📍 Pin set manually! Coordinates captured.', 'success');
+                showToast('📍 Pin set manually! Coordinates captured.', 'success');
+            } else {
+                // Map not loaded, just store coordinates
+                showToast('📍 Coordinates stored. Map will show pin when loaded.', 'info');
+                // Try to re-init map
+                setTimeout(initMap, 500);
+            }
         }
 
         // ============================================================
@@ -1679,29 +1689,28 @@
                     document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.email || 'User';
                     loadEntries();
                     loadUserData();
-                    // Wait a moment for DOM to settle before loading map
-                    setTimeout(initMap, 300);
+                    setTimeout(initMap, 600);
                 }
             });
 
             loadEntries();
             updateOfflineStatus();
 
-            console.log('🚀 PELO Data Collection v2.1');
+            console.log('🚀 PELO Data Collection v2.2');
             console.log('   ⚛️ CHSH S=2.76');
             console.log('   🔐 Google Sign-in + Registration + Demo');
-            console.log('   📍 Map: Leaflet with fallback');
+            console.log('   📍 Map: Leaflet with dark theme + pinning');
             console.log('   📧 Data sent to: mindtech.industriesai@gmail.com');
             console.log('   📶 Offline capable — auto-sync when online');
         });
 
-        // Retry map if not loaded after 5 seconds
+        // Retry map if not loaded after 3 seconds
         setTimeout(function() {
             if (!mapInitialized && document.getElementById('appContainer').style.display !== 'none') {
                 console.log('🔄 Retrying map initialization...');
                 initMap();
             }
-        }, 5000);
+        }, 3000);
     </script>
 
 </body>
