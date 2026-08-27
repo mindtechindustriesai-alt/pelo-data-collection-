@@ -59,16 +59,14 @@
             z-index: 1;
         }
 
-        /* ============================================================
-           SCREEN MANAGEMENT - ALL SCREENS CONTROLLED UNIFORMLY
-           ============================================================ */
+        /* ===== SCREEN MANAGEMENT — FIXED: login visible by default ===== */
         #loginOverlay,
         #registerModal,
         #appContainer {
             transition: opacity 0.4s ease, visibility 0.4s ease;
         }
 
-        /* LOGIN OVERLAY - Hidden by default, shown with .visible */
+        /* LOGIN OVERLAY — VISIBLE BY DEFAULT, hidden with .hidden class */
         #loginOverlay {
             position: fixed;
             top: 0;
@@ -84,18 +82,18 @@
             justify-content: center;
             padding: 20px;
             flex-direction: column;
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
-
-        #loginOverlay.visible {
             opacity: 1;
             visibility: visible;
             pointer-events: auto;
         }
 
-        /* REGISTER MODAL - Hidden by default, shown with .visible */
+        #loginOverlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* REGISTER MODAL — hidden by default, shown with .visible */
         #registerModal {
             position: fixed;
             top: 0;
@@ -121,7 +119,7 @@
             pointer-events: auto;
         }
 
-        /* APP CONTAINER - Hidden by default, shown with .visible */
+        /* APP CONTAINER — hidden by default, shown with .visible */
         #appContainer {
             display: block !important;
             opacity: 0;
@@ -640,7 +638,7 @@
 <body>
 
     <!-- ============================================================
-    LOGIN OVERLAY
+    LOGIN OVERLAY — VISIBLE BY DEFAULT
     ============================================================ -->
     <div id="loginOverlay">
         <div class="login-card">
@@ -648,17 +646,17 @@
             <div class="login-title">PELO Data Collection</div>
             <div class="login-subtitle">Community Collection Network</div>
 
-            <button class="btn-login btn-google" onclick="loginWithGoogle()">
+            <button class="btn-login btn-google" id="googleSignInBtn">
                 <i class="fab fa-google" style="font-size:1.1rem;"></i> Sign in with Google
             </button>
 
             <div class="login-divider">or</div>
 
-            <button class="btn-login btn-demo" onclick="loginAsDemo()">
+            <button class="btn-login btn-demo" id="demoLoginBtn">
                 <i class="fas fa-user-astronaut"></i> Continue as Guest (Demo)
             </button>
 
-            <button class="btn-login btn-register" onclick="showRegister()">
+            <button class="btn-login btn-register" id="openRegisterBtn">
                 <i class="fas fa-user-plus"></i> Register New Account
             </button>
 
@@ -692,7 +690,7 @@
                 <button type="submit" class="btn-primary" style="margin-top:10px;">
                     <i class="fas fa-user-plus"></i> Create Account
                 </button>
-                <button type="button" class="btn-login btn-register" style="margin-top:10px;" onclick="closeRegister()">
+                <button type="button" class="btn-login btn-register" style="margin-top:10px;" id="closeRegisterBtn">
                     <i class="fas fa-arrow-left"></i> Back to Login
                 </button>
             </form>
@@ -715,7 +713,7 @@
             <span class="header-badge">⚛️ CHSH S=2.76</span>
             <div class="header-user" id="userDisplay">
                 <span id="userNameDisplay">Guest</span>
-                <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                <button class="btn-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
         </header>
 
@@ -941,7 +939,7 @@
     </div>
 
     <!-- ============================================================
-    JAVASCRIPT - STRICT AUTH FIX INTEGRATED
+    JAVASCRIPT — FIXED LOGIN FLOW
     ============================================================ -->
     <script>
         // ============================================================
@@ -960,6 +958,9 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
+        // Set persistence to NONE — prevents auto-login from previous sessions
+        auth.setPersistence(firebase.auth.Auth.Persistence.NONE);
+
         // ============================================================
         // STATE
         // ============================================================
@@ -972,40 +973,51 @@
         let authResolved = false;
 
         // ============================================================
-        // SCREEN MANAGEMENT - UNIFIED CONTROL
+        // SCREEN MANAGEMENT — LOGIN VISIBLE BY DEFAULT
         // ============================================================
         function showScreen(screen) {
             const loginOverlay = document.getElementById('loginOverlay');
             const registerModal = document.getElementById('registerModal');
             const appContainer = document.getElementById('appContainer');
 
-            // Remove visible class from all screens
-            loginOverlay.classList.remove('visible');
+            // Remove visible/hidden classes from all screens
+            loginOverlay.classList.remove('hidden');
             registerModal.classList.remove('visible');
             appContainer.classList.remove('visible');
 
-            // Add visible class to the requested screen
+            // Show the requested screen
             if (screen === 'login') {
-                loginOverlay.classList.add('visible');
+                loginOverlay.classList.remove('hidden'); // login is visible by default
             } else if (screen === 'register') {
                 registerModal.classList.add('visible');
             } else if (screen === 'app') {
+                loginOverlay.classList.add('hidden'); // hide login
                 appContainer.classList.add('visible');
             }
         }
 
         // ============================================================
+        // DOM REFS
+        // ============================================================
+        const googleBtn = document.getElementById('googleSignInBtn');
+        const demoBtn = document.getElementById('demoLoginBtn');
+        const openRegisterBtn = document.getElementById('openRegisterBtn');
+        const closeRegisterBtn = document.getElementById('closeRegisterBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const loginError = document.getElementById('loginError');
+
+        // ============================================================
         // AUTH FUNCTIONS
         // ============================================================
         function loginWithGoogle() {
-            document.getElementById('loginError').textContent = '⏳ Signing in...';
+            loginError.textContent = '⏳ Signing in...';
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider)
                 .then((result) => {
                     currentUser = result.user;
                     isDemo = false;
                     authResolved = true;
-                    document.getElementById('loginError').textContent = '';
+                    loginError.textContent = '';
                     document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.email || 'User';
                     showScreen('app');
                     loadEntries();
@@ -1013,7 +1025,7 @@
                     showToast('✅ Welcome, ' + (currentUser.displayName || 'User') + '!');
                 })
                 .catch((error) => {
-                    document.getElementById('loginError').textContent = '❌ ' + error.message;
+                    loginError.textContent = '❌ ' + error.message;
                 });
         }
 
@@ -1021,19 +1033,11 @@
             currentUser = { uid: 'demo_' + Date.now(), displayName: 'Guest User', email: 'guest@pelorecovery.co.za' };
             isDemo = true;
             authResolved = true;
-            document.getElementById('loginError').textContent = '';
+            loginError.textContent = '';
             document.getElementById('userNameDisplay').textContent = '👤 Guest User';
             showScreen('app');
             loadEntries();
             showToast('👋 Welcome, Guest! Your data is saved locally.');
-        }
-
-        function showRegister() {
-            showScreen('register');
-        }
-
-        function closeRegister() {
-            showScreen('login');
         }
 
         function registerUser(event) {
@@ -1094,29 +1098,30 @@
         }
 
         // ============================================================
-        // AUTH STATE LISTENER - PROPER FLOW
+        // AUTH STATE LISTENER — ONLY USED FOR SESSION RESTORE
         // ============================================================
         auth.onAuthStateChanged((user) => {
             authResolved = true;
             if (user) {
+                // If user is already logged in (session restore), show app
                 currentUser = user;
                 isDemo = false;
                 document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.email || 'User';
                 showScreen('app');
                 loadEntries();
                 loadUserData();
-                console.log('✅ User authenticated:', user.email);
+                console.log('✅ Session restored for:', user.email);
             } else {
-                // Only show login if not already in demo mode
+                // Only show login if not already in demo mode and if login isn't already showing
                 if (!isDemo) {
                     showScreen('login');
-                    console.log('🔐 No user, showing login screen');
+                    console.log('🔐 No session, showing login screen');
                 }
             }
         });
 
         // ============================================================
-        // TIMEOUT FALLBACK - Shows login after 3 seconds if auth hangs
+        // TIMEOUT FALLBACK — Shows login after 3 seconds if auth hangs
         // ============================================================
         setTimeout(() => {
             if (!authResolved) {
@@ -1125,6 +1130,15 @@
                 console.log('⏱️ Auth timeout: showing login screen');
             }
         }, 3000);
+
+        // ============================================================
+        // EVENT LISTENERS
+        // ============================================================
+        googleBtn.addEventListener('click', loginWithGoogle);
+        demoBtn.addEventListener('click', loginAsDemo);
+        openRegisterBtn.addEventListener('click', () => showScreen('register'));
+        closeRegisterBtn.addEventListener('click', () => showScreen('login'));
+        logoutBtn.addEventListener('click', logout);
 
         // ============================================================
         // OFFLINE DETECTION
@@ -1617,25 +1631,27 @@
         }
 
         // ============================================================
-        // INIT - Show login screen by default
+        // INIT — Login is VISIBLE by default
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            // Start with login screen visible
-            showScreen('login');
+            // Login overlay is visible by default (no need to call showScreen)
+            // But ensure register and app are hidden
+            document.getElementById('registerModal').classList.remove('visible');
+            document.getElementById('appContainer').classList.remove('visible');
 
             // Initialize map
             initMap();
             loadEntries();
             updateOfflineStatus();
 
-            console.log('🚀 PELO Data Collection v2.0');
+            console.log('🚀 PELO Data Collection v2.0 — LOGIN FIXED');
             console.log('   ⚛️ CHSH S=2.76');
-            console.log('   🔐 Google Sign-in + Registration + Demo');
+            console.log('   🔐 Login is visible by default — user must click to authenticate');
             console.log('   📍 Map enabled — click to drop pins');
             console.log('   📧 Data sent to: mindtech.industriesai@gmail.com');
             console.log('   💬 Community Safety Contacts included');
             console.log('   📶 Offline capable — auto-sync when online');
-            console.log('   ✅ Login flow fixed - screen management unified');
+            console.log('   ✅ Login flow fixed: login visible by default, app hidden until authentication');
         });
     </script>
 
