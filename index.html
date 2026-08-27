@@ -23,7 +23,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 
     <style>
-        /* ===== RESET & BASE ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
@@ -64,14 +63,14 @@
             z-index: 1;
         }
 
-        /* ===== LOGIN OVERLAY ===== */
+        /* ===== LOGIN OVERLAY — ALWAYS SHOWN FIRST ===== */
         #loginOverlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(5,8,15,0.97);
+            background: rgba(5,8,15,0.98);
             backdrop-filter: blur(28px);
             -webkit-backdrop-filter: blur(28px);
             z-index: 9999;
@@ -82,7 +81,31 @@
             flex-direction: column;
             transition: opacity 0.6s ease;
         }
-        #loginOverlay.hidden { opacity: 0; pointer-events: none; }
+
+        #loginOverlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* ===== REGISTER MODAL — HIDDEN BY DEFAULT ===== */
+        #registerModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5,8,15,0.95);
+            backdrop-filter: blur(20px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        #registerModal.visible {
+            display: flex;
+        }
 
         @keyframes glassPulse {
             0% { border-color: rgba(0,180,216,0.2); box-shadow: 0 0 0 0 rgba(0,180,216,0.05); }
@@ -190,19 +213,6 @@
         }
         .btn-register:hover { background: rgba(255,255,255,0.12); border-color: var(--pelo-gold); }
 
-        .btn-logout {
-            background: rgba(239,71,111,0.15);
-            border: 1px solid rgba(239,71,111,0.2);
-            color: var(--danger);
-            padding: 6px 14px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-family: var(--font-exo);
-            font-size: 0.6rem;
-            transition: all 0.3s;
-        }
-        .btn-logout:hover { background: rgba(239,71,111,0.25); }
-
         /* ===== HEADER ===== */
         .header {
             display: flex;
@@ -271,6 +281,19 @@
             color: white;
             overflow: hidden;
         }
+
+        .btn-logout {
+            background: rgba(239,71,111,0.15);
+            border: 1px solid rgba(239,71,111,0.2);
+            color: var(--danger);
+            padding: 6px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-family: var(--font-exo);
+            font-size: 0.6rem;
+            transition: all 0.3s;
+        }
+        .btn-logout:hover { background: rgba(239,71,111,0.25); }
 
         /* ===== GLASS CARD ===== */
         .glass-card {
@@ -360,7 +383,7 @@
         }
         .form-section-title i { font-size: 0.9rem; }
 
-        /* ===== MAP — NO WATERMARK ===== */
+        /* ===== MAP ===== */
         #map {
             width: 100%;
             height: 280px;
@@ -632,7 +655,7 @@
 <body>
 
     <!-- ============================================================
-    LOGIN OVERLAY
+    LOGIN OVERLAY — ALWAYS SHOWN FIRST
     ============================================================ -->
     <div id="loginOverlay">
         <div class="login-card">
@@ -640,17 +663,20 @@
             <div class="login-title">PELO Data Collection</div>
             <div class="login-subtitle">Community Collection Network</div>
 
+            <!-- Google Sign-in -->
             <button class="btn-login btn-google" onclick="loginWithGoogle()">
                 <i class="fab fa-google" style="font-size:1.1rem;"></i> Sign in with Google
             </button>
 
             <div class="login-divider">or</div>
 
+            <!-- Demo Button -->
             <button class="btn-login btn-demo" onclick="loginAsDemo()">
                 <i class="fas fa-user-astronaut"></i> Continue as Guest (Demo)
             </button>
 
-            <button class="btn-login btn-register" onclick="showRegister()">
+            <!-- Register Button -->
+            <button class="btn-login btn-register" onclick="openRegister()">
                 <i class="fas fa-user-plus"></i> Register New Account
             </button>
 
@@ -659,9 +685,9 @@
     </div>
 
     <!-- ============================================================
-    REGISTRATION MODAL
+    REGISTER MODAL
     ============================================================ -->
-    <div id="registerModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(5,8,15,0.95); backdrop-filter:blur(20px); z-index:10000; align-items:center; justify-content:center; padding:20px; display:none;">
+    <div id="registerModal">
         <div class="login-card" style="max-width:400px;">
             <h2 style="font-size:1.3rem; margin-bottom:16px; color:var(--pelo-gold);">Create Account</h2>
             <form id="registerForm" onsubmit="registerUser(event)">
@@ -693,7 +719,7 @@
     </div>
 
     <!-- ============================================================
-    MAIN APP
+    MAIN APP — HIDDEN UNTIL LOGIN
     ============================================================ -->
     <div id="appContainer" class="container" style="display:none;">
 
@@ -726,6 +752,7 @@
             </div>
 
             <form id="dataForm" onsubmit="submitEntry(event)">
+                <!-- Site Type -->
                 <div class="form-group">
                     <label>Site Type <span class="required">*</span></label>
                     <select id="siteType" required>
@@ -741,11 +768,13 @@
                     </select>
                 </div>
 
+                <!-- Business / Owner Name -->
                 <div class="form-group">
                     <label>Business / Owner Name <span class="required">*</span></label>
                     <input type="text" id="ownerName" placeholder="e.g. Watville Auto Repairs" required>
                 </div>
 
+                <!-- Contact Person -->
                 <div class="form-row-2">
                     <div class="form-group">
                         <label>Contact Person <span class="required">*</span></label>
@@ -757,6 +786,7 @@
                     </div>
                 </div>
 
+                <!-- Location -->
                 <div class="form-group">
                     <label>Area / Community <span class="required">*</span></label>
                     <input type="text" id="area" placeholder="e.g. Watville, Daveyton" required>
@@ -767,6 +797,7 @@
                     <input type="text" id="address" placeholder="Street address or GPS coordinates">
                 </div>
 
+                <!-- Volume Estimate -->
                 <div class="form-row-3">
                     <div class="form-group">
                         <label>Cooking Oil (L) <span class="required">*</span></label>
@@ -782,6 +813,7 @@
                     </div>
                 </div>
 
+                <!-- Waste Types -->
                 <div class="form-group">
                     <label>Waste Type(s) Collected</label>
                     <select id="wasteType" multiple style="height:80px;">
@@ -799,6 +831,7 @@
                     <span style="font-size:0.5rem; color:var(--text-muted);">Hold Ctrl (Cmd) to select multiple</span>
                 </div>
 
+                <!-- Collection Frequency -->
                 <div class="form-row-2">
                     <div class="form-group">
                         <label>Collection Frequency</label>
@@ -815,6 +848,7 @@
                     </div>
                 </div>
 
+                <!-- Current Disposal -->
                 <div class="form-group">
                     <label>Current Disposal Method</label>
                     <select id="disposalMethod">
@@ -862,12 +896,13 @@
                     </div>
                 </div>
 
+                <!-- Notes -->
                 <div class="form-group">
                     <label>Notes / Observations</label>
                     <textarea id="notes" placeholder="Any additional information..."></textarea>
                 </div>
 
-                <!-- ===== MAP — NO WATERMARK ===== -->
+                <!-- MAP -->
                 <div id="map">
                     <div class="map-loading">
                         <i class="fas fa-spinner"></i>
@@ -886,6 +921,7 @@
                 <input type="hidden" id="latitude" value="">
                 <input type="hidden" id="longitude" value="">
 
+                <!-- Submit -->
                 <button type="submit" class="btn-primary" id="submitBtn">
                     <i class="fas fa-check-circle"></i> Submit Entry
                 </button>
@@ -931,7 +967,7 @@
     </div>
 
     <!-- ============================================================
-    JAVASCRIPT — MAP WITH NO WATERMARK
+    JAVASCRIPT
     ============================================================ -->
     <script>
         // ============================================================
@@ -962,7 +998,7 @@
         let mapInitialized = false;
 
         // ============================================================
-        // AUTH FUNCTIONS
+        // LOGIN FUNCTIONS
         // ============================================================
         function loginWithGoogle() {
             document.getElementById('loginError').textContent = '⏳ Signing in...';
@@ -997,12 +1033,12 @@
             showToast('👋 Welcome, Guest! Your data is saved locally.');
         }
 
-        function showRegister() {
-            document.getElementById('registerModal').style.display = 'flex';
+        function openRegister() {
+            document.getElementById('registerModal').classList.add('visible');
         }
 
         function closeRegister() {
-            document.getElementById('registerModal').style.display = 'none';
+            document.getElementById('registerModal').classList.remove('visible');
         }
 
         function registerUser(event) {
@@ -1048,6 +1084,8 @@
             isDemo = false;
             document.getElementById('loginOverlay').classList.remove('hidden');
             document.getElementById('appContainer').style.display = 'none';
+            // Reset login error
+            document.getElementById('loginError').textContent = '';
             showToast('👋 Logged out.');
         }
 
@@ -1475,7 +1513,6 @@
         function initMap() {
             const container = document.getElementById('map');
 
-            // If map already exists, clean it up
             if (map) {
                 try {
                     map.remove();
@@ -1486,7 +1523,6 @@
                 marker = null;
             }
 
-            // Check if Leaflet is loaded
             if (typeof L === 'undefined') {
                 console.warn('Leaflet not loaded, retrying...');
                 container.innerHTML = `
@@ -1500,11 +1536,9 @@
             }
 
             try {
-                // Set default view (Watville/Daveyton area)
                 const defaultLat = -26.194;
                 const defaultLng = 28.241;
 
-                // Initialize map
                 map = L.map(container, {
                     center: [defaultLat, defaultLng],
                     zoom: 14,
@@ -1513,45 +1547,36 @@
                     attributionControl: true
                 });
 
-                // ===== TILE LAYER — NO WATERMARK =====
-                // Using standard OpenStreetMap tiles with minimal attribution
+                // OSM tiles — no watermark
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OSM',
                     maxZoom: 19,
                     subdomains: 'abc'
                 }).addTo(map);
 
-                // Add zoom control
                 L.control.zoom({
                     position: 'topright'
                 }).addTo(map);
 
-                // Handle click to drop pin
                 map.on('click', function(e) {
                     const lat = e.latlng.lat;
                     const lng = e.latlng.lng;
 
-                    // Remove existing marker
                     if (marker) {
                         map.removeLayer(marker);
                     }
 
-                    // Create draggable marker
                     marker = L.marker([lat, lng], {
                         draggable: true
                     }).addTo(map);
 
                     marker.bindPopup(`📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`).openPopup();
 
-                    // Update hidden fields
                     document.getElementById('latitude').value = lat.toFixed(6);
                     document.getElementById('longitude').value = lng.toFixed(6);
-
-                    // Update manual inputs
                     document.getElementById('manualLat').value = lat.toFixed(6);
                     document.getElementById('manualLng').value = lng.toFixed(6);
 
-                    // Handle drag
                     marker.on('dragend', function() {
                         const pos = marker.getLatLng();
                         document.getElementById('latitude').value = pos.lat.toFixed(6);
@@ -1564,14 +1589,12 @@
                     showToast('📍 Pin dropped! Coordinates captured.', 'success');
                 });
 
-                // Try to get user location
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
                         function(position) {
                             const lat = position.coords.latitude;
                             const lng = position.coords.longitude;
                             map.setView([lat, lng], 15);
-                            // Add user location marker
                             const userMarker = L.circleMarker([lat, lng], {
                                 radius: 8,
                                 fillColor: '#00B4D8',
@@ -1580,20 +1603,17 @@
                                 fillOpacity: 0.6
                             }).addTo(map);
                             userMarker.bindPopup('📌 Your location').openPopup();
-                            console.log('📍 User location found:', lat, lng);
                         },
-                        function() {
-                            console.log('📍 User location denied, using default view');
-                        },
+                        function() {},
                         { enableHighAccuracy: true, timeout: 10000 }
                     );
                 }
 
                 mapInitialized = true;
-                console.log('🗺️ Map initialized successfully (OSM tiles, no watermark)');
+                console.log('🗺️ Map initialized (OSM tiles, no watermark)');
 
             } catch (error) {
-                console.warn('Map initialization error:', error);
+                console.warn('Map error:', error);
                 container.innerHTML = `
                     <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:0.75rem;flex-direction:column;gap:10px;padding:20px;text-align:center;">
                         <i class="fas fa-map" style="font-size:2rem;opacity:0.3;"></i>
@@ -1629,11 +1649,9 @@
                 return;
             }
 
-            // Update hidden fields
             document.getElementById('latitude').value = latNum.toFixed(6);
             document.getElementById('longitude').value = lngNum.toFixed(6);
 
-            // If map exists, add marker
             if (map && mapInitialized) {
                 if (marker) {
                     map.removeLayer(marker);
@@ -1657,9 +1675,7 @@
 
                 showToast('📍 Pin set manually! Coordinates captured.', 'success');
             } else {
-                // Map not loaded, just store coordinates
                 showToast('📍 Coordinates stored. Map will show pin when loaded.', 'info');
-                // Try to re-init map
                 setTimeout(initMap, 500);
             }
         }
@@ -1686,7 +1702,7 @@
         // INIT
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            // Check auth state
+            // Check if already authenticated
             auth.onAuthStateChanged((user) => {
                 if (user) {
                     currentUser = user;
@@ -1697,24 +1713,28 @@
                     loadEntries();
                     loadUserData();
                     setTimeout(initMap, 600);
+                } else {
+                    // Show login overlay
+                    document.getElementById('loginOverlay').classList.remove('hidden');
+                    document.getElementById('appContainer').style.display = 'none';
                 }
             });
 
             loadEntries();
             updateOfflineStatus();
 
-            console.log('🚀 PELO Data Collection v2.3');
+            console.log('🚀 PELO Data Collection v2.4');
             console.log('   ⚛️ CHSH S=2.76');
-            console.log('   🔐 Google Sign-in + Registration + Demo');
+            console.log('   🔐 Login required — Google, Demo, or Register');
             console.log('   📍 Map: OSM tiles — no watermark');
             console.log('   📧 Data sent to: mindtech.industriesai@gmail.com');
             console.log('   📶 Offline capable — auto-sync when online');
         });
 
-        // Retry map if not loaded after 3 seconds
+        // Retry map if not loaded
         setTimeout(function() {
             if (!mapInitialized && document.getElementById('appContainer').style.display !== 'none') {
-                console.log('🔄 Retrying map initialization...');
+                console.log('🔄 Retrying map...');
                 initMap();
             }
         }, 3000);
