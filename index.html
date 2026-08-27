@@ -360,7 +360,7 @@
         }
         .form-section-title i { font-size: 0.9rem; }
 
-        /* ===== MAP — FIXED ===== */
+        /* ===== MAP — NO WATERMARK ===== */
         #map {
             width: 100%;
             height: 280px;
@@ -374,9 +374,15 @@
         }
 
         #map .leaflet-control-attribution {
-            background: rgba(5,8,15,0.8);
+            background: rgba(5,8,15,0.6);
+            color: var(--text-muted);
+            font-size: 0.4rem;
+            opacity: 0.6;
+        }
+
+        #map .leaflet-control-attribution a {
             color: var(--text-secondary);
-            font-size: 0.45rem;
+            text-decoration: none;
         }
 
         #map .leaflet-control-zoom a {
@@ -861,7 +867,7 @@
                     <textarea id="notes" placeholder="Any additional information..."></textarea>
                 </div>
 
-                <!-- ===== MAP — FIXED ===== -->
+                <!-- ===== MAP — NO WATERMARK ===== -->
                 <div id="map">
                     <div class="map-loading">
                         <i class="fas fa-spinner"></i>
@@ -925,7 +931,7 @@
     </div>
 
     <!-- ============================================================
-    JAVASCRIPT — MAP FIXED
+    JAVASCRIPT — MAP WITH NO WATERMARK
     ============================================================ -->
     <script>
         // ============================================================
@@ -1464,7 +1470,7 @@
         }
 
         // ============================================================
-        // MAP — FIXED (copied from Khensani AI)
+        // MAP — NO WATERMARK
         // ============================================================
         function initMap() {
             const container = document.getElementById('map');
@@ -1507,11 +1513,12 @@
                     attributionControl: true
                 });
 
-                // Add dark tile layer
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '&copy; OpenStreetMap',
-                    subdomains: 'abcd',
-                    maxZoom: 19
+                // ===== TILE LAYER — NO WATERMARK =====
+                // Using standard OpenStreetMap tiles with minimal attribution
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OSM',
+                    maxZoom: 19,
+                    subdomains: 'abc'
                 }).addTo(map);
 
                 // Add zoom control
@@ -1583,7 +1590,7 @@
                 }
 
                 mapInitialized = true;
-                console.log('🗺️ Map initialized successfully');
+                console.log('🗺️ Map initialized successfully (OSM tiles, no watermark)');
 
             } catch (error) {
                 console.warn('Map initialization error:', error);
@@ -1696,10 +1703,10 @@
             loadEntries();
             updateOfflineStatus();
 
-            console.log('🚀 PELO Data Collection v2.2');
+            console.log('🚀 PELO Data Collection v2.3');
             console.log('   ⚛️ CHSH S=2.76');
             console.log('   🔐 Google Sign-in + Registration + Demo');
-            console.log('   📍 Map: Leaflet with dark theme + pinning');
+            console.log('   📍 Map: OSM tiles — no watermark');
             console.log('   📧 Data sent to: mindtech.industriesai@gmail.com');
             console.log('   📶 Offline capable — auto-sync when online');
         });
