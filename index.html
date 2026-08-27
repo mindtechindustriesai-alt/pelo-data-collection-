@@ -11,7 +11,6 @@
 
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -20,7 +19,6 @@
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -79,11 +77,12 @@
             justify-content: center;
             padding: 20px;
             flex-direction: column;
-            transition: opacity 0.8s ease;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
         }
 
         #loginOverlay.hidden {
             opacity: 0;
+            visibility: hidden;
             pointer-events: none;
         }
 
@@ -104,7 +103,7 @@
         }
 
         #registerModal.visible {
-            display: flex;
+            display: flex !important;
         }
 
         @keyframes glassPulse {
@@ -195,6 +194,7 @@
             margin-top: 12px;
         }
         .btn-login:hover { transform: translateY(-2px); filter: brightness(1.05); }
+        .btn-login:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
         .btn-google { background: #4285F4; color: white; box-shadow: 0 4px 15px rgba(66,133,244,0.3); }
         .btn-google:hover { box-shadow: 0 8px 25px rgba(66,133,244,0.5); }
@@ -490,7 +490,8 @@
             justify-content: center;
             gap: 10px;
         }
-        .btn-primary:hover { transform: scale(1.01); }
+        .btn-primary:hover:not(:disabled) { transform: scale(1.01); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .btn-secondary {
             padding: 8px 16px;
@@ -663,14 +664,14 @@
             <div class="login-subtitle">Community Collection Network</div>
 
             <!-- Google Sign-in -->
-            <button class="btn-login btn-google" onclick="loginWithGoogle()">
+            <button class="btn-login btn-google" id="googleLoginBtn" onclick="loginWithGoogle()">
                 <i class="fab fa-google" style="font-size:1.1rem;"></i> Sign in with Google
             </button>
 
             <div class="login-divider">or</div>
 
             <!-- Demo Button -->
-            <button class="btn-login btn-demo" onclick="loginAsDemo()">
+            <button class="btn-login btn-demo" id="demoLoginBtn" onclick="loginAsDemo()">
                 <i class="fas fa-user-astronaut"></i> Continue as Guest (Demo)
             </button>
 
@@ -718,7 +719,7 @@
     </div>
 
     <!-- ============================================================
-    MAIN APP — HIDDEN BY DEFAULT (style="display:none")
+    MAIN APP — HIDDEN BY DEFAULT
     ============================================================ -->
     <div id="appContainer" class="container" style="display:none;">
 
@@ -958,7 +959,7 @@
     </div>
 
     <!-- ============================================================
-    JAVASCRIPT — FULL FIX
+    JAVASCRIPT — FULL FIXED VERSION
     ============================================================ -->
     <script>
         // ============================================================
@@ -988,6 +989,10 @@
         let isDemo = false;
         let mapInitialized = false;
         let appVisible = false;
+        let isSubmitting = false;
+        let authReady = false;
+        let mapRetryCount = 0;
+        const MAX_MAP_RETRIES = 5;
 
         // ============================================================
         // DOM REFS
@@ -997,23 +1002,57 @@
         const loginError = document.getElementById('loginError');
 
         // ============================================================
-        // SHOW APP — THE ONLY WAY TO SHOW THE APP
+        // AUTH HANDLER — THE GATEKEEPER
+        // ============================================================
+        function handleAuth(user) {
+            authReady = true;
+            
+            if (user) {
+                // User is signed in
+                currentUser = user;
+                isDemo = false;
+                if (!appVisible) {
+                    showApp();
+                }
+                console.log('🔐 User authenticated:', user.email || user.uid);
+            } else {
+                // No user — show login
+                if (appVisible) {
+                    hideApp();
+                } else {
+                    // Ensure login overlay is shown
+                    loginOverlay.classList.remove('hidden');
+                    appContainer.style.display = 'none';
+                    appVisible = false;
+                }
+                console.log('🔓 No user — login required');
+            }
+        }
+
+        // ============================================================
+        // SHOW APP
         // ============================================================
         function showApp() {
-            if (appVisible) return; // Prevent double-show
+            if (appVisible) return;
             appVisible = true;
             loginOverlay.classList.add('hidden');
             appContainer.style.display = 'block';
-            document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.email || 'Guest';
+            
+            const displayName = currentUser.displayName || currentUser.email || 'Guest';
+            document.getElementById('userNameDisplay').textContent = displayName;
             loginError.textContent = '';
+            
             loadEntries();
             loadUserData();
+            
+            // Initialize map after a delay
             setTimeout(initMap, 600);
+            
             console.log('✅ App shown for user:', currentUser ? currentUser.email : 'demo');
         }
 
         // ============================================================
-        // HIDE APP — SHOW LOGIN
+        // HIDE APP
         // ============================================================
         function hideApp() {
             appVisible = false;
@@ -1026,29 +1065,48 @@
         // LOGIN FUNCTIONS
         // ============================================================
         function loginWithGoogle() {
+            const btn = document.getElementById('googleLoginBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
             loginError.textContent = '⏳ Signing in...';
+
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider)
                 .then((result) => {
-                    currentUser = result.user;
-                    isDemo = false;
-                    showApp();
-                    showToast('✅ Welcome, ' + (currentUser.displayName || 'User') + '!');
+                    handleAuth(result.user);
+                    showToast('✅ Welcome, ' + (result.user.displayName || 'User') + '!');
                 })
                 .catch((error) => {
                     loginError.textContent = '❌ ' + error.message;
+                    showToast('❌ Login failed: ' + error.message, 'error');
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fab fa-google" style="font-size:1.1rem;"></i> Sign in with Google';
                 });
         }
 
         function loginAsDemo() {
-            currentUser = {
+            const btn = document.getElementById('demoLoginBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+
+            // Create a demo user that matches auth structure
+            const demoUser = {
                 uid: 'demo_' + Date.now(),
                 displayName: 'Guest User',
-                email: 'guest@pelorecovery.co.za'
+                email: 'guest@pelorecovery.co.za',
+                isAnonymous: true,
+                metadata: { creationTime: new Date().toISOString() }
             };
+            
+            currentUser = demoUser;
             isDemo = true;
             showApp();
             showToast('👋 Welcome, Guest! Your data is saved locally.');
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-user-astronaut"></i> Continue as Guest (Demo)';
         }
 
         function openRegister() {
@@ -1057,10 +1115,12 @@
 
         function closeRegister() {
             document.getElementById('registerModal').classList.remove('visible');
+            document.getElementById('registerError').textContent = '';
         }
 
         function registerUser(event) {
             event.preventDefault();
+            
             const name = document.getElementById('regName').value.trim();
             const email = document.getElementById('regEmail').value.trim();
             const phone = document.getElementById('regPhone').value.trim();
@@ -1070,6 +1130,10 @@
                 document.getElementById('registerError').textContent = '⚠️ Name and Email are required.';
                 return;
             }
+
+            const btn = document.querySelector('#registerForm .btn-primary');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
 
             db.collection('users').doc(email).set({
                 name: name,
@@ -1082,42 +1146,54 @@
             .then(() => {
                 document.getElementById('registerError').textContent = '';
                 closeRegister();
-                currentUser = {
+                
+                // Create a registered user object
+                const registeredUser = {
                     uid: 'registered_' + email,
                     displayName: name,
-                    email: email
+                    email: email,
+                    isAnonymous: false
                 };
+                
+                currentUser = registeredUser;
                 isDemo = true;
                 showApp();
                 showToast('✅ Account created! Welcome, ' + name + '!');
             })
             .catch((error) => {
                 document.getElementById('registerError').textContent = '❌ ' + error.message;
+                showToast('❌ Registration failed: ' + error.message, 'error');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
             });
         }
 
         function logout() {
-            if (!isDemo) {
-                auth.signOut()
-                    .then(() => {
-                        currentUser = null;
-                        isDemo = false;
-                        hideApp();
-                        showToast('👋 Logged out.');
-                    })
-                    .catch(() => {
-                        // Fallback
-                        currentUser = null;
-                        isDemo = false;
-                        hideApp();
-                        showToast('👋 Logged out.');
-                    });
-            } else {
+            if (isDemo) {
                 currentUser = null;
                 isDemo = false;
                 hideApp();
                 showToast('👋 Logged out.');
+                return;
             }
+
+            auth.signOut()
+                .then(() => {
+                    currentUser = null;
+                    isDemo = false;
+                    hideApp();
+                    showToast('👋 Logged out.');
+                })
+                .catch((error) => {
+                    // Fallback logout
+                    currentUser = null;
+                    isDemo = false;
+                    hideApp();
+                    showToast('👋 Logged out.');
+                    console.warn('Logout error:', error);
+                });
         }
 
         // ============================================================
@@ -1280,105 +1356,126 @@
         // ============================================================
         function submitEntry(event) {
             event.preventDefault();
+            
+            if (isSubmitting) return;
+            isSubmitting = true;
 
-            const siteType = document.getElementById('siteType').value;
-            const ownerName = document.getElementById('ownerName').value.trim();
-            const contactPerson = document.getElementById('contactPerson').value.trim();
-            const phoneNumber = document.getElementById('phoneNumber').value.trim();
-            const area = document.getElementById('area').value.trim();
-            const address = document.getElementById('address').value.trim();
-            const oilVolume = document.getElementById('oilVolume').value;
-            const engineOil = document.getElementById('engineOil').value || 0;
-            const otherVolume = document.getElementById('otherVolume').value || 0;
-            const wasteType = document.getElementById('wasteType');
-            const wasteTypes = Array.from(wasteType.selectedOptions).map(opt => opt.value);
-            const collectionFrequency = document.getElementById('collectionFrequency').value;
-            const monthlyVolume = document.getElementById('monthlyVolume').value || 0;
-            const disposalMethod = document.getElementById('disposalMethod').value;
-            const notes = document.getElementById('notes').value.trim();
-            const latitude = document.getElementById('latitude').value;
-            const longitude = document.getElementById('longitude').value;
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
 
-            const whatsappGroup = document.getElementById('whatsappGroup').value.trim();
-            const whatsappAdmin = document.getElementById('whatsappAdmin').value.trim();
-            const securityCompany = document.getElementById('securityCompany').value.trim();
-            const securityContact = document.getElementById('securityContact').value.trim();
-            const policeStation = document.getElementById('policeStation').value.trim();
-            const policeWard = document.getElementById('policeWard').value.trim();
+            try {
+                const siteType = document.getElementById('siteType').value;
+                const ownerName = document.getElementById('ownerName').value.trim();
+                const contactPerson = document.getElementById('contactPerson').value.trim();
+                const phoneNumber = document.getElementById('phoneNumber').value.trim();
+                const area = document.getElementById('area').value.trim();
+                const address = document.getElementById('address').value.trim();
+                const oilVolume = document.getElementById('oilVolume').value;
+                const engineOil = document.getElementById('engineOil').value || 0;
+                const otherVolume = document.getElementById('otherVolume').value || 0;
+                const wasteType = document.getElementById('wasteType');
+                const wasteTypes = Array.from(wasteType.selectedOptions).map(opt => opt.value);
+                const collectionFrequency = document.getElementById('collectionFrequency').value;
+                const monthlyVolume = document.getElementById('monthlyVolume').value || 0;
+                const disposalMethod = document.getElementById('disposalMethod').value;
+                const notes = document.getElementById('notes').value.trim();
+                const latitude = document.getElementById('latitude').value;
+                const longitude = document.getElementById('longitude').value;
 
-            if (!ownerName || !contactPerson || !phoneNumber || !area || !oilVolume) {
-                showToast('⚠️ Please fill in all required fields.', 'error');
-                return;
+                const whatsappGroup = document.getElementById('whatsappGroup').value.trim();
+                const whatsappAdmin = document.getElementById('whatsappAdmin').value.trim();
+                const securityCompany = document.getElementById('securityCompany').value.trim();
+                const securityContact = document.getElementById('securityContact').value.trim();
+                const policeStation = document.getElementById('policeStation').value.trim();
+                const policeWard = document.getElementById('policeWard').value.trim();
+
+                if (!ownerName || !contactPerson || !phoneNumber || !area || !oilVolume) {
+                    showToast('⚠️ Please fill in all required fields.', 'error');
+                    isSubmitting = false;
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                    return;
+                }
+
+                const entry = {
+                    id: Date.now(),
+                    siteType,
+                    ownerName,
+                    contactPerson,
+                    phone: phoneNumber,
+                    area,
+                    address,
+                    oilVolume: parseInt(oilVolume) || 0,
+                    engineOil: parseInt(engineOil) || 0,
+                    otherVolume: parseInt(otherVolume) || 0,
+                    wasteTypes,
+                    collectionFrequency,
+                    monthlyVolume: parseInt(monthlyVolume) || 0,
+                    disposalMethod,
+                    notes,
+                    latitude,
+                    longitude,
+                    whatsappGroup,
+                    whatsappAdmin,
+                    securityCompany,
+                    securityContact,
+                    policeStation,
+                    policeWard,
+                    userId: currentUser ? currentUser.uid : 'anonymous',
+                    userName: currentUser ? currentUser.displayName || currentUser.email : 'Guest',
+                    timestamp: new Date().toISOString(),
+                    chsh_s: '2.76',
+                    patent: 'SA 2026/05142',
+                    status: 'submitted',
+                    synced: false
+                };
+
+                entries.push(entry);
+                saveEntries();
+
+                if (!isOffline) {
+                    submitToEmail(entry, function(success) {
+                        if (success) {
+                            entry.synced = true;
+                            saveEntries();
+                        }
+                    });
+                } else {
+                    showToast('📶 You are offline. Entry saved locally. Will sync when online.', 'info');
+                }
+
+                // Reset form
+                document.getElementById('dataForm').reset();
+                document.getElementById('latitude').value = '';
+                document.getElementById('longitude').value = '';
+                document.getElementById('oilVolume').value = '';
+                document.getElementById('engineOil').value = '';
+                document.getElementById('otherVolume').value = '';
+                document.getElementById('monthlyVolume').value = '';
+                document.getElementById('notes').value = '';
+                document.getElementById('whatsappGroup').value = '';
+                document.getElementById('whatsappAdmin').value = '';
+                document.getElementById('securityCompany').value = '';
+                document.getElementById('securityContact').value = '';
+                document.getElementById('policeStation').value = '';
+                document.getElementById('policeWard').value = '';
+
+                if (marker && map) {
+                    map.removeLayer(marker);
+                    marker = null;
+                }
+
+                showToast('✅ Entry submitted! Quantum-verified data saved.', 'success');
+            } catch (error) {
+                console.error('Submit error:', error);
+                showToast('❌ Error submitting entry: ' + error.message, 'error');
+            } finally {
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Submit Entry';
             }
-
-            const entry = {
-                id: Date.now(),
-                siteType,
-                ownerName,
-                contactPerson,
-                phone: phoneNumber,
-                area,
-                address,
-                oilVolume: parseInt(oilVolume) || 0,
-                engineOil: parseInt(engineOil) || 0,
-                otherVolume: parseInt(otherVolume) || 0,
-                wasteTypes,
-                collectionFrequency,
-                monthlyVolume: parseInt(monthlyVolume) || 0,
-                disposalMethod,
-                notes,
-                latitude,
-                longitude,
-                whatsappGroup,
-                whatsappAdmin,
-                securityCompany,
-                securityContact,
-                policeStation,
-                policeWard,
-                userId: currentUser ? currentUser.uid : 'anonymous',
-                userName: currentUser ? currentUser.displayName || currentUser.email : 'Guest',
-                timestamp: new Date().toISOString(),
-                chsh_s: '2.76',
-                patent: 'SA 2026/05142',
-                status: 'submitted',
-                synced: false
-            };
-
-            entries.push(entry);
-            saveEntries();
-
-            if (!isOffline) {
-                submitToEmail(entry, function(success) {
-                    if (success) {
-                        entry.synced = true;
-                        saveEntries();
-                    }
-                });
-            } else {
-                showToast('📶 You are offline. Entry saved locally. Will sync when online.', 'info');
-            }
-
-            document.getElementById('dataForm').reset();
-            document.getElementById('latitude').value = '';
-            document.getElementById('longitude').value = '';
-            document.getElementById('oilVolume').value = '';
-            document.getElementById('engineOil').value = '';
-            document.getElementById('otherVolume').value = '';
-            document.getElementById('monthlyVolume').value = '';
-            document.getElementById('notes').value = '';
-            document.getElementById('whatsappGroup').value = '';
-            document.getElementById('whatsappAdmin').value = '';
-            document.getElementById('securityCompany').value = '';
-            document.getElementById('securityContact').value = '';
-            document.getElementById('policeStation').value = '';
-            document.getElementById('policeWard').value = '';
-
-            if (marker) {
-                map.removeLayer(marker);
-                marker = null;
-            }
-
-            showToast('✅ Entry submitted! Quantum-verified data saved.', 'success');
         }
 
         // ============================================================
@@ -1441,13 +1538,34 @@
                 document.body.appendChild(iframe);
                 document.body.appendChild(form);
 
+                let completed = false;
+
+                iframe.onload = function() {
+                    if (!completed) {
+                        completed = true;
+                        setTimeout(() => {
+                            try {
+                                if (form.parentNode) document.body.removeChild(form);
+                                if (iframe.parentNode) document.body.removeChild(iframe);
+                            } catch(e) {}
+                            if (callback) callback(true);
+                        }, 500);
+                    }
+                };
+
                 form.submit();
 
+                // Fallback timeout
                 setTimeout(() => {
-                    document.body.removeChild(form);
-                    document.body.removeChild(iframe);
-                    if (callback) callback(true);
-                }, 3000);
+                    if (!completed) {
+                        completed = true;
+                        try {
+                            if (form.parentNode) document.body.removeChild(form);
+                            if (iframe.parentNode) document.body.removeChild(iframe);
+                        } catch(e) {}
+                        if (callback) callback(true);
+                    }
+                }, 10000);
 
             } catch(e) {
                 console.warn('Email submit error:', e);
@@ -1542,7 +1660,7 @@
         }
 
         // ============================================================
-        // MAP — NO WATERMARK
+        // MAP — NO WATERMARK, WITH RETRY
         // ============================================================
         function initMap() {
             const container = document.getElementById('map');
@@ -1557,15 +1675,27 @@
                 marker = null;
             }
 
+            if (mapRetryCount >= MAX_MAP_RETRIES) {
+                container.innerHTML = `
+                    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:0.75rem;flex-direction:column;gap:10px;padding:20px;text-align:center;">
+                        <i class="fas fa-map" style="font-size:2rem;opacity:0.3;"></i>
+                        <p>Map could not load. Use the manual coordinates below.</p>
+                        <p style="font-size:0.6rem;color:var(--text-muted);">Enter latitude and longitude, then click "Set Pin"</p>
+                    </div>
+                `;
+                return;
+            }
+
             if (typeof L === 'undefined') {
-                console.warn('Leaflet not loaded, retrying...');
+                mapRetryCount++;
+                console.warn(`Leaflet not loaded, retrying... (${mapRetryCount}/${MAX_MAP_RETRIES})`);
                 container.innerHTML = `
                     <div class="map-loading">
                         <i class="fas fa-spinner"></i>
-                        <span>Loading map library...</span>
+                        <span>Loading map library... (${mapRetryCount}/${MAX_MAP_RETRIES})</span>
                     </div>
                 `;
-                setTimeout(initMap, 1000);
+                setTimeout(initMap, 1500 * mapRetryCount);
                 return;
             }
 
@@ -1622,6 +1752,7 @@
                     showToast('📍 Pin dropped! Coordinates captured.', 'success');
                 });
 
+                // Geolocation
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
                         function(position) {
@@ -1643,10 +1774,12 @@
                 }
 
                 mapInitialized = true;
+                mapRetryCount = 0;
                 console.log('🗺️ Map initialized (OSM tiles)');
 
             } catch (error) {
                 console.warn('Map error:', error);
+                mapRetryCount++;
                 container.innerHTML = `
                     <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:0.75rem;flex-direction:column;gap:10px;padding:20px;text-align:center;">
                         <i class="fas fa-map" style="font-size:2rem;opacity:0.3;"></i>
@@ -1732,30 +1865,23 @@
         }
 
         // ============================================================
-        // AUTH STATE — THE ONLY GATEKEEPER
+        // AUTH STATE — THE GATEKEEPER
         // ============================================================
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                // User is signed in — show the app
-                currentUser = user;
-                isDemo = false;
-                // Check if app is already visible to prevent duplicate
-                if (!appVisible) {
-                    showApp();
-                }
-                console.log('🔐 User authenticated:', user.email);
-            } else {
-                // No user — hide app if visible
-                if (appVisible) {
-                    hideApp();
-                } else {
-                    // Ensure login overlay is visible
-                    loginOverlay.classList.remove('hidden');
-                    appContainer.style.display = 'none';
-                }
-                console.log('🔓 No user — login required');
-            }
+        // Wait for Firebase auth to be ready
+        auth.onAuthStateChanged(function(user) {
+            handleAuth(user);
         });
+
+        // Fallback: If auth doesn't resolve in 3 seconds, show login
+        setTimeout(() => {
+            if (!authReady) {
+                console.warn('⚠️ Auth timeout — showing login overlay');
+                loginOverlay.classList.remove('hidden');
+                appContainer.style.display = 'none';
+                appVisible = false;
+                authReady = true;
+            }
+        }, 3000);
 
         // ============================================================
         // INIT
@@ -1764,17 +1890,18 @@
             loadEntries();
             updateOfflineStatus();
 
-            // Ensure login overlay is visible initially
+            // Ensure login overlay is visible initially (will be hidden by auth if user is logged in)
             loginOverlay.classList.remove('hidden');
             appContainer.style.display = 'none';
             appVisible = false;
 
-            console.log('🚀 PELO Data Collection v2.6 (Full Login Fix)');
+            console.log('🚀 PELO Data Collection v2.7 (Login Fix Applied)');
             console.log('   ⚛️ CHSH S=2.76');
-            console.log('   🔐 Login overlay always visible until auth confirms');
+            console.log('   🔐 Login overlay fixed — no flash');
             console.log('   📍 Map: OSM tiles — no watermark');
             console.log('   📧 Data sent to: mindtech.industriesai@gmail.com');
             console.log('   📶 Offline capable — auto-sync when online');
+            console.log('   🔄 Map retry: ' + MAX_MAP_RETRIES + ' attempts');
         });
     </script>
 
