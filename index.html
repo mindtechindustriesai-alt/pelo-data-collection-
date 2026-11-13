@@ -1,444 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>PELO Data Collection — Community Collection Network</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <title>PELO Data Collection | Quantum Ledger</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Inline favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚛️</text></svg>">
 
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌍</text></svg>">
+    <!-- FONTS & ICONS -->
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
+    <!-- FIREBASE SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
-        /* ... (ALL YOUR EXISTING CSS — DO NOT CHANGE) ... */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --primary: #00B4D8; --primary-dark: #0096C7; --secondary: #00F5D4; --quantum: #8A2BE2;
-            --quantum-glow: rgba(138,43,226,0.3); --success: #00FF88; --danger: #EF476F; --gold: #FFD700;
-            --dark-bg: #05080F; --dark-card: #0A0F1A; --glass-border: rgba(0,180,216,0.15);
-            --glass-border-light: rgba(0,180,216,0.08); --text-primary: #E8EDF5; --text-secondary: #8A99B0;
-            --text-muted: #4A5A6A; --font-exo: 'Exo 2', sans-serif; --font-mono: 'Space Mono', monospace;
-            --pelo-green: #1B4D3D; --pelo-gold: #C8A450; --pelo-gold-glow: rgba(200,164,80,0.15);
+            --success: #00FF88; --danger: #EF476F; --gold: #FFD700; --warning: #FFD166;
+            --dark-bg: #05080F; --dark-card: #0A0F1A;
+            --glass-border: rgba(0, 180, 216, 0.15);
+            --text-primary: #E8EDF5; --text-secondary: #8A99B0; --text-muted: #4A5A6A;
+            --font-exo: 'Exo 2', sans-serif; --font-mono: 'Space Mono', monospace;
+            --pelo-green: #1B4D3D; --pelo-gold: #C8A450; --pelo-gold-glow: rgba(200, 164, 80, 0.15);
         }
-        body { font-family: var(--font-exo); background: var(--dark-bg); color: var(--text-primary); min-height: 100vh; overflow-x: hidden; }
-        .container { max-width: 900px; margin: 0 auto; padding: 16px; position: relative; z-index: 1; }
-        #loginOverlay, #registerModal, #collectorRegisterModal, #appContainer { transition: opacity 0.4s ease, visibility 0.4s ease; }
-        #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,8,15,0.97); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); z-index: 9999; display: flex !important; align-items: center; justify-content: center; padding: 20px; flex-direction: column; opacity: 1; visibility: visible; pointer-events: auto; }
-        #loginOverlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-        #registerModal, #collectorRegisterModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,8,15,0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 10000; display: flex !important; align-items: center; justify-content: center; padding: 20px; opacity: 0; visibility: hidden; pointer-events: none; }
-        #registerModal.visible, #collectorRegisterModal.visible { opacity: 1; visibility: visible; pointer-events: auto; }
-        #appContainer { display: block !important; opacity: 0; visibility: hidden; pointer-events: none; }
-        #appContainer.visible { opacity: 1; visibility: visible; pointer-events: auto; }
-        #communitySection { display: none; }
-        #communitySection.visible { display: block; }
-        @keyframes glassPulse { 0% { border-color: rgba(0,180,216,0.2); box-shadow: 0 0 0 0 rgba(0,180,216,0.05); } 50% { border-color: rgba(200,164,80,0.3); box-shadow: 0 0 40px 5px var(--pelo-gold-glow); } 100% { border-color: rgba(0,180,216,0.2); box-shadow: 0 0 0 0 rgba(0,180,216,0.05); } }
-        .login-card { max-width: 440px; width: 100%; padding: 40px 32px; text-align: center; background: rgba(15,25,45,0.45); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: 28px; box-shadow: 0 8px 60px rgba(0,0,0,0.4); animation: glassPulse 4s ease-in-out infinite; }
-        .login-logo { max-width: 200px; width: 100%; margin-bottom: 16px; filter: drop-shadow(0 0 30px var(--pelo-gold-glow)); display: block; margin-left: auto; margin-right: auto; }
-        .login-title { font-size: 1.6rem; font-weight: 800; background: linear-gradient(135deg, var(--pelo-gold), var(--pelo-green)); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 4px; }
-        .login-subtitle { font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 20px; font-family: var(--font-mono); letter-spacing: 2px; }
-        .login-divider { display: flex; align-items: center; gap: 15px; margin: 16px 0; color: var(--text-muted); font-size: 0.6rem; }
-        .login-divider::before, .login-divider::after { content: ""; flex: 1; height: 1px; background: var(--glass-border); }
-        .login-error { color: var(--danger); font-size: 0.75rem; margin-top: 10px; min-height: 20px; }
-        .btn-login { width: 100%; padding: 14px; border: none; border-radius: 60px; font-size: 0.9rem; font-weight: 700; cursor: pointer; font-family: var(--font-exo); transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; }
-        .btn-login:hover { transform: translateY(-2px); filter: brightness(1.05); }
-        .btn-google { background: #4285F4; color: white; box-shadow: 0 4px 15px rgba(66,133,244,0.3); }
-        .btn-google:hover { box-shadow: 0 8px 25px rgba(66,133,244,0.5); }
-        .btn-demo { background: linear-gradient(135deg, var(--pelo-gold), var(--pelo-green)); color: white; box-shadow: 0 4px 15px rgba(200,164,80,0.3); }
-        .btn-demo:hover { box-shadow: 0 8px 25px rgba(200,164,80,0.5); }
-        .btn-register { background: rgba(255,255,255,0.06); color: var(--text-primary); border: 1px solid var(--glass-border); }
-        .btn-register:hover { background: rgba(255,255,255,0.12); border-color: var(--pelo-gold); }
-        .btn-logout { background: rgba(239,71,111,0.15); border: 1px solid rgba(239,71,111,0.2); color: var(--danger); padding: 6px 14px; border-radius: 30px; cursor: pointer; font-family: var(--font-exo); font-size: 0.6rem; transition: all 0.3s; }
-        .btn-logout:hover { background: rgba(239,71,111,0.25); }
-        .header { display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: rgba(15,25,45,0.35); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 20px; margin-bottom: 20px; flex-wrap: wrap; }
-        .header-logo { height: 52px; width: auto; filter: drop-shadow(0 0 20px var(--pelo-gold-glow)); flex-shrink: 0; }
-        .header-text { flex: 1; }
+        body { font-family: var(--font-exo); background: var(--dark-bg); color: var(--text-primary); min-height: 100vh; overflow-x: hidden; padding: 16px; }
+        .container { max-width: 800px; margin: 0 auto; padding: 16px; position: relative; z-index: 1; }
+        
+        /* GLASSMORPHISM */
+        .glass-card { 
+            background: rgba(15, 25, 45, 0.35); 
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px); 
+            border: 1px solid var(--glass-border); 
+            border-radius: 20px; 
+            padding: 28px; 
+            margin-bottom: 20px; 
+            transition: all 0.3s ease; 
+        }
+        .glass-card:hover { border-color: var(--pelo-gold); box-shadow: 0 0 30px rgba(200, 164, 80, 0.08); }
+        
+        /* HEADER */
+        .header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 16px 20px; 
+            background: rgba(15, 25, 45, 0.35); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid var(--glass-border); 
+            border-radius: 20px; 
+            margin-bottom: 20px; 
+            flex-wrap: wrap; 
+            gap: 12px; 
+        }
+        .header-logo { height: 48px; width: auto; filter: drop-shadow(0 0 20px var(--pelo-gold-glow)); }
         .header-text h1 { font-size: 1.1rem; font-weight: 800; background: linear-gradient(135deg, var(--pelo-gold), var(--pelo-green)); -webkit-background-clip: text; background-clip: text; color: transparent; }
         .header-text p { font-size: 0.5rem; color: var(--text-secondary); letter-spacing: 2px; font-family: var(--font-mono); }
-        .handshake-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 14px; border-radius: 20px; font-size: 0.55rem; font-family: var(--font-mono); border: 1px solid var(--gold); color: var(--gold); background: rgba(255, 215, 0, 0.08); transition: all 0.3s; white-space: nowrap; }
-        .handshake-badge.confirmed { border-color: var(--success); color: var(--success); background: rgba(0, 255, 136, 0.08); }
+        
+        /* HANDSHAKE BADGE & RETRY */
+        .handshake-container { display: flex; align-items: center; gap: 8px; }
+        .handshake-badge { 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 6px; 
+            padding: 6px 14px; 
+            border-radius: 20px; 
+            font-size: 0.6rem; 
+            font-family: var(--font-mono); 
+            border: 1px solid var(--gold); 
+            color: var(--gold); 
+            background: rgba(255, 215, 0, 0.08); 
+            transition: all 0.3s; 
+        }
+        .handshake-badge.connected { border-color: var(--success); color: var(--success); background: rgba(0, 255, 136, 0.08); }
         .handshake-badge.unreachable { border-color: var(--danger); color: var(--danger); background: rgba(239, 71, 111, 0.08); }
-        .header-user { display: flex; align-items: center; gap: 10px; font-size: 0.65rem; color: var(--text-secondary); flex-wrap: wrap; }
-        .btn-collector-register { background: linear-gradient(135deg, var(--pelo-green), var(--pelo-gold)); border: none; color: white; padding: 6px 16px; border-radius: 30px; font-size: 0.6rem; font-weight: 700; cursor: pointer; font-family: var(--font-exo); transition: all 0.3s; white-space: nowrap; }
-        .btn-collector-register:hover { transform: scale(1.05); box-shadow: 0 4px 20px rgba(200,164,80,0.3); }
-        .glass-card { background: rgba(15,25,45,0.30); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 20px; padding: 24px; margin-bottom: 20px; transition: all 0.3s ease; }
-        .glass-card:hover { border-color: var(--pelo-gold); }
-        .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--glass-border); flex-wrap: wrap; }
-        .card-header i { font-size: 1.3rem; color: var(--pelo-gold); }
-        .card-header h3 { font-size: 1rem; font-weight: 600; }
-        .card-header .count-badge { margin-left: auto; font-size: 0.6rem; background: rgba(0,180,216,0.08); padding: 2px 12px; border-radius: 20px; color: var(--text-secondary); }
-        .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; margin-bottom: 4px; font-size: 0.6rem; color: var(--text-secondary); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
-        .form-group label .required { color: var(--danger); }
-        .form-group label .optional { color: var(--text-muted); font-weight: 400; text-transform: none; font-size: 0.55rem; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 14px; background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); border-radius: 14px; color: var(--text-primary); font-size: 0.85rem; transition: all 0.3s; font-family: var(--font-exo); }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--pelo-gold); box-shadow: 0 0 0 3px rgba(200,164,80,0.04); }
-        .form-group textarea { resize: vertical; min-height: 60px; }
-        .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-        .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-        .form-row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
-        .form-section-title { font-size: 0.7rem; font-weight: 700; color: var(--pelo-gold); margin: 10px 0 12px; padding-bottom: 6px; border-bottom: 1px solid rgba(200,164,80,0.08); display: flex; align-items: center; gap: 8px; }
-        .form-section-title i { font-size: 0.9rem; }
-        #map { width: 100%; height: 260px; border-radius: 14px; overflow: hidden; border: 1px solid var(--glass-border); margin: 10px 0 14px; background: #0A0F1A; }
-        #map .leaflet-control-attribution { background: rgba(5,8,15,0.8); color: var(--text-secondary); font-size: 0.45rem; }
-        .map-hint { font-size: 0.6rem; color: var(--text-secondary); text-align: center; margin-top: 4px; }
-        .map-hint i { color: var(--pelo-gold); }
-        .btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--pelo-green), var(--pelo-gold)); border: none; border-radius: 60px; color: white; font-weight: 700; cursor: pointer; font-family: var(--font-exo); font-size: 0.9rem; transition: transform 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-retry { 
+            background: transparent; 
+            border: 1px solid var(--glass-border); 
+            border-radius: 20px; 
+            padding: 4px 12px; 
+            color: var(--text-secondary); 
+            cursor: pointer; 
+            font-size: 0.55rem; 
+            transition: all 0.2s;
+        }
+        .btn-retry:hover { border-color: var(--pelo-gold); color: var(--pelo-gold); }
+
+        /* FORM ELEMENTS */
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; font-family: var(--font-mono); }
+        input, select, textarea { 
+            width: 100%; 
+            padding: 12px 16px; 
+            background: rgba(5, 8, 15, 0.6); 
+            border: 1px solid var(--glass-border); 
+            border-radius: 12px; 
+            color: var(--text-primary); 
+            font-family: var(--font-exo); 
+            font-size: 0.85rem; 
+            transition: all 0.3s; 
+        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 12px rgba(0, 180, 216, 0.2); }
+        
+        /* BUTTONS */
+        .btn-primary { 
+            width: 100%; 
+            padding: 14px; 
+            background: linear-gradient(135deg, var(--pelo-green), var(--pelo-gold)); 
+            border: none; 
+            border-radius: 60px; 
+            color: white; 
+            font-weight: 700; 
+            cursor: pointer; 
+            font-family: var(--font-exo); 
+            font-size: 0.9rem; 
+            transition: transform 0.2s ease; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 10px; 
+            margin-top: 10px; 
+        }
         .btn-primary:hover { transform: scale(1.01); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .btn-secondary { padding: 8px 16px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 30px; color: var(--text-secondary); cursor: pointer; font-family: var(--font-exo); font-size: 0.65rem; transition: all 0.3s; }
-        .btn-secondary:hover { border-color: var(--pelo-gold); color: var(--text-primary); }
-        .btn-danger { padding: 4px 12px; background: rgba(239,71,111,0.12); border: 1px solid rgba(239,71,111,0.15); border-radius: 20px; color: var(--danger); cursor: pointer; font-family: var(--font-exo); font-size: 0.55rem; transition: all 0.3s; }
-        .btn-danger:hover { background: rgba(239,71,111,0.25); }
-        .entries-list { margin-top: 12px; max-height: 300px; overflow-y: auto; }
-        .entry-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(0,0,0,0.12); border-radius: 12px; margin-bottom: 6px; border-left: 3px solid var(--pelo-gold); font-size: 0.75rem; flex-wrap: wrap; gap: 6px; }
-        .entry-item .entry-info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
-        .entry-item .entry-info .name { font-weight: 600; color: var(--text-primary); }
-        .entry-item .entry-info .details { font-size: 0.6rem; color: var(--text-secondary); }
-        .entry-item .entry-info .location { font-size: 0.55rem; color: var(--text-muted); font-family: var(--font-mono); }
-        .entry-item .entry-actions { display: flex; gap: 6px; align-items: center; }
-        .entry-item .entry-status { font-size: 0.45rem; padding: 2px 10px; border-radius: 20px; background: rgba(0,255,136,0.06); color: var(--success); font-family: var(--font-mono); }
-        .offline-indicator { display: none; align-items: center; gap: 8px; padding: 8px 14px; background: rgba(255,215,0,0.06); border: 1px solid rgba(255,215,0,0.1); border-radius: 12px; font-size: 0.65rem; color: var(--gold); margin-bottom: 12px; }
-        .offline-indicator.visible { display: flex; }
-        .offline-indicator i { font-size: 0.9rem; }
-        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(10,18,35,0.92); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 14px 28px; color: var(--text-primary); z-index: 99999; box-shadow: 0 8px 50px rgba(0,0,0,0.5); font-family: var(--font-exo); font-size: 0.8rem; max-width: 90%; text-align: center; animation: toastIn 0.3s ease; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* TOAST */
+        .toast { 
+            position: fixed; 
+            bottom: 30px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            background: rgba(10, 18, 35, 0.95); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid var(--glass-border); 
+            border-radius: 16px; 
+            padding: 14px 28px; 
+            color: var(--text-primary); 
+            z-index: 9999; 
+            font-size: 0.8rem; 
+            max-width: 90%; 
+            text-align: center; 
+            animation: toastIn 0.3s ease; 
+        }
         @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
-        .footer { text-align: center; padding: 20px 20px 10px; margin-top: 20px; border-top: 1px solid var(--glass-border); }
-        .footer-logos { display: flex; justify-content: center; align-items: center; gap: 30px; flex-wrap: wrap; margin-bottom: 12px; }
-        .footer-logo { height: 40px; width: auto; opacity: 0.7; transition: all 0.3s; filter: drop-shadow(0 0 8px rgba(0,180,216,0.05)); object-fit: contain; }
-        .footer-logo:hover { opacity: 1; transform: scale(1.05); filter: drop-shadow(0 0 12px rgba(0,180,216,0.15)); }
-        .quantum-line { font-family: var(--font-mono); font-size: 0.5rem; color: var(--text-muted); letter-spacing: 2px; opacity: 0.4; }
-        .footer .copyright { font-size: 0.5rem; color: var(--text-secondary); margin-top: 4px; }
-        .impact-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
-        .impact-card { background: rgba(0,0,0,0.15); border-radius: 14px; padding: 12px; text-align: center; border: 1px solid var(--glass-border); }
-        .impact-card .value { font-size: 1.4rem; font-weight: 800; }
-        .impact-card .label { font-size: 0.5rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
-        .impact-card .value.gold { color: var(--pelo-gold); }
-        .impact-card .value.green { color: var(--success); }
-        .impact-card .value.cyan { color: var(--secondary); }
-        .impact-card .value.primary { color: var(--primary); }
-        .notice-board { margin-top: 20px; padding: 16px; background: rgba(0,0,0,0.10); border-radius: 14px; border: 1px dashed rgba(200,164,80,0.15); }
-        .notice-board .notice-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .notice-board .notice-header i { color: var(--pelo-gold); font-size: 1rem; }
-        .notice-board .notice-header span { font-size: 0.7rem; font-weight: 700; color: var(--pelo-gold); }
-        .notice-board .notice-header .badge { font-size: 0.45rem; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 2px 10px; border-radius: 20px; margin-left: auto; }
-        .notice-content { font-size: 0.65rem; color: var(--text-secondary); max-height: 80px; overflow-y: auto; }
-        .notice-content p { margin-bottom: 4px; }
-        .notice-content strong { color: var(--text-primary); }
-        @media (max-width: 768px) {
-            .container { padding: 10px; }
-            .form-row-2 { grid-template-columns: 1fr; }
-            .form-row-3 { grid-template-columns: 1fr 1fr; }
-            .form-row-4 { grid-template-columns: 1fr 1fr; }
-            .impact-grid { grid-template-columns: 1fr 1fr; }
-            .header { flex-wrap: wrap; }
-            .header-badge { margin-left: 0; }
-            .glass-card { padding: 16px; }
-            #map { height: 200px; }
-            .entry-item { flex-wrap: wrap; gap: 6px; }
-            .header-logo { height: 40px; }
-            .footer-logo { height: 32px; }
-            .login-card { padding: 28px 20px; }
-            .login-logo { max-width: 150px; }
-        }
-        @media (max-width: 480px) {
-            .form-row-3 { grid-template-columns: 1fr; }
-            .form-row-4 { grid-template-columns: 1fr; }
-            .impact-grid { grid-template-columns: 1fr 1fr; }
-            .header-logo { height: 36px; }
-            .header-text h1 { font-size: 0.9rem; }
-            .handshake-badge { font-size: 0.45rem; padding: 2px 10px; }
-            .login-title { font-size: 1.3rem; }
-            .footer-logo { height: 28px; }
-            .footer-logos { gap: 16px; }
-        }
+        
+        /* FOOTER */
+        .footer { text-align: center; padding: 20px; font-size: 0.55rem; color: var(--text-secondary); font-family: var(--font-mono); margin-top: 20px; border-top: 1px solid var(--glass-border); }
+        .nav-links { display: flex; justify-content: center; gap: 16px; margin-bottom: 12px; }
+        .nav-links a { color: var(--primary); text-decoration: none; font-size: 0.65rem; transition: color 0.2s; }
+        .nav-links a:hover { color: var(--secondary); }
     </style>
 </head>
 <body>
 
-    <!-- LOGIN OVERLAY -->
-    <div id="loginOverlay">
-        <div class="login-card">
-            <img src="https://raw.githubusercontent.com/mindtechindustriesai-alt/my-images/main/pelo_community_final_image-removebg-preview.png" alt="PELO Recovery Centre" class="login-logo" onerror="this.src='https://i.postimg.cc/T114NczG/pelo-recovery-image-removebg-preview.png'">
-            <div class="login-title">PELO Data Collection</div>
-            <div class="login-subtitle">Community Collection Network</div>
-            <button class="btn-login btn-google" id="googleSignInBtn"><i class="fab fa-google" style="font-size:1.1rem;"></i> Sign in with Google</button>
-            <div class="login-divider">or</div>
-            <button class="btn-login btn-demo" id="demoLoginBtn"><i class="fas fa-user-astronaut"></i> Continue as Guest (Demo)</button>
-            <button class="btn-login btn-register" id="openRegisterBtn"><i class="fas fa-user-plus"></i> Register New Account</button>
-            <div id="loginError" class="login-error"></div>
-        </div>
-    </div>
-
-    <!-- REGISTRATION MODAL -->
-    <div id="registerModal">
-        <div class="login-card" style="max-width:400px;">
-            <h2 style="font-size:1.3rem; margin-bottom:16px; color:var(--pelo-gold);">🌍 Create Account</h2>
-            <form id="registerForm" onsubmit="registerUser(event)">
-                <div class="form-group"><label>Full Name <span class="required">*</span></label><input type="text" id="regName" placeholder="Your full name" required></div>
-                <div class="form-group"><label>Email Address <span class="required">*</span></label><input type="email" id="regEmail" placeholder="your@email.com" required></div>
-                <div class="form-group"><label>Phone Number <span class="required">*</span></label><input type="tel" id="regPhone" placeholder="+27 82 555 1234" required></div>
-                <div class="form-group"><label>Community / Area <span class="required">*</span></label><input type="text" id="regArea" placeholder="e.g. Watville, Daveyton, eMalahleni" required></div>
-                <button type="submit" class="btn-primary" style="margin-top:10px;"><i class="fas fa-user-plus"></i> Create Account — Join PELO</button>
-                <button type="button" class="btn-login btn-register" style="margin-top:10px;" id="closeRegisterBtn"><i class="fas fa-arrow-left"></i> Back to Login</button>
-            </form>
-            <div id="registerError" class="login-error"></div>
-        </div>
-    </div>
-
-    <!-- COLLECTOR REGISTRATION MODAL -->
-    <div id="collectorRegisterModal">
-        <div class="login-card" style="max-width:400px;">
-            <h2 style="font-size:1.3rem; margin-bottom:16px; color:var(--pelo-gold);"><i class="fas fa-hand-holding-heart"></i> Register to be a Collector</h2>
-            <p style="font-size:0.7rem; color:var(--text-secondary); margin-bottom:16px;">Join the PELO network. Help collect waste, earn from recycling, and build a greener Africa.</p>
-            <form id="collectorRegisterForm" onsubmit="registerCollector(event)">
-                <div class="form-group"><label>Full Name <span class="required">*</span></label><input type="text" id="colRegName" placeholder="Your full name" required></div>
-                <div class="form-group"><label>Email Address <span class="required">*</span></label><input type="email" id="colRegEmail" placeholder="your@email.com" required></div>
-                <div class="form-group"><label>Phone Number <span class="required">*</span></label><input type="tel" id="colRegPhone" placeholder="+27 82 555 1234" required></div>
-                <div class="form-group"><label>Community / Area <span class="required">*</span></label><input type="text" id="colRegArea" placeholder="e.g. Watville, Daveyton" required></div>
-                <div class="form-group"><label>Collection Experience</label><select id="colRegExperience"><option value="beginner">🌱 Beginner — Just starting</option><option value="intermediate">🔄 Intermediate — Some experience</option><option value="experienced">♻️ Experienced — Active collector</option><option value="business">🏢 Business — I run a collection business</option></select></div>
-                <div class="form-group"><label>Why do you want to collect?</label><textarea id="colRegReason" rows="3" placeholder="Tell us about your motivation..."></textarea></div>
-                <button type="submit" class="btn-primary" style="margin-top:10px; background: linear-gradient(135deg, var(--pelo-green), var(--pelo-gold));"><i class="fas fa-check-circle"></i> Register as Collector</button>
-                <button type="button" class="btn-login btn-register" style="margin-top:10px;" id="closeCollectorRegisterBtn"><i class="fas fa-arrow-left"></i> Back to App</button>
-            </form>
-            <div id="collectorRegisterError" class="login-error"></div>
-        </div>
-    </div>
-
-    <!-- MAIN APP -->
-    <div id="appContainer" class="container">
-
+    <div class="container">
         <!-- HEADER -->
         <header class="header">
-            <img src="https://raw.githubusercontent.com/mindtechindustriesai-alt/my-images/main/pelo_community_final_image-removebg-preview.png" alt="PELO Recovery Centre" class="header-logo" onerror="this.src='https://i.postimg.cc/T114NczG/pelo-recovery-image-removebg-preview.png'">
+            <img src="https://raw.githubusercontent.com/mindtechindustriesai-alt/my-images/main/pelo_community_final_image-removebg-preview.png" alt="PELO Recovery" class="header-logo" onerror="this.style.display='none'" />
             <div class="header-text">
                 <h1>PELO Data Collection</h1>
-                <p>Community Collection Network</p>
+                <p>Secure Quantum Ledger Gateway</p>
             </div>
-            <!-- LIVE HANDSHAKE BADGE -->
-            <span id="handshakeBadge" class="handshake-badge"><i class="fas fa-satellite-dish"></i> Handshake: Pending...</span>
-            <div class="header-user">
-                <span id="userNameDisplay">Guest</span>
-                <button class="btn-collector-register" id="openCollectorRegisterBtn"><i class="fas fa-user-plus"></i> Register to be a Collector</button>
-                <button class="btn-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            <!-- STATUS BADGE & RETRY -->
+            <div class="handshake-container">
+                <span id="handshakeBadge" class="handshake-badge"><i class="fas fa-satellite-dish"></i> Handshake: Checking...</span>
+                <button onclick="checkHandshake()" class="btn-retry"><i class="fas fa-sync-alt"></i> Retry</button>
             </div>
         </header>
 
-        <!-- OFFLINE INDICATOR -->
-        <div class="offline-indicator" id="offlineIndicator">
-            <i class="fas fa-wifi"></i>
-            <span id="offlineText">You are offline — data will be saved locally and synced when online</span>
+        <!-- NAVIGATION LINKS -->
+        <div class="nav-links">
+            <a href="dashboard.html"><i class="fas fa-chart-line"></i> View Dashboard</a>
+            <a href="verify.html"><i class="fas fa-shield-alt"></i> Verify Certificate</a>
         </div>
 
-        <!-- MAIN DATA COLLECTION FORM -->
+        <!-- FORM CARD -->
         <div class="glass-card">
-            <div class="card-header">
-                <i class="fas fa-clipboard-list"></i>
-                <h3>New Entry</h3>
-                <span class="count-badge" id="entryCount">0 entries</span>
-            </div>
-            <form id="dataForm" onsubmit="submitEntry(event)">
-                <div class="form-group"><label>Site Type <span class="required">*</span></label><select id="siteType" required><option value="mechanic">🔧 Mechanic / Workshop</option><option value="generator">⚡ Generator / Plant</option><option value="garage">🚗 Garage / Service Centre</option><option value="mine">⛏️ Mining Site</option><option value="fastfood">🍔 Fast Food / Takeaway</option><option value="kota">🍟 Kota Stand / Amagwinya</option><option value="roadhouse">🏍️ Roadhouse</option><option value="spaza">🏪 Spaza / Tuck Shop</option><option value="other">📌 Other (specify below)</option></select></div>
-                <div class="form-group"><label>Business / Owner Name <span class="required">*</span></label><input type="text" id="ownerName" placeholder="e.g. Watville Auto Repairs" required></div>
-                <div class="form-row-2">
-                    <div class="form-group"><label>Contact Person <span class="required">*</span></label><input type="text" id="contactPerson" placeholder="Full name" required></div>
-                    <div class="form-group"><label>Phone Number <span class="required">*</span></label><input type="tel" id="phoneNumber" placeholder="+27 82 555 1234" required></div>
-                </div>
-                <div class="form-group"><label>Area / Community <span class="required">*</span></label><input type="text" id="area" placeholder="e.g. Watville, Daveyton, eMalahleni" required></div>
-                <div class="form-group"><label>Full Address / GPS</label><input type="text" id="address" placeholder="Street address or GPS coordinates"></div>
-                <div class="form-row-3">
-                    <div class="form-group"><label>Cooking Oil (L) <span class="required">*</span></label><input type="number" id="oilVolume" placeholder="e.g. 200" required min="0"></div>
-                    <div class="form-group"><label>Engine Oil (L)</label><input type="number" id="engineOil" placeholder="e.g. 50" min="0"></div>
-                    <div class="form-group"><label>Other Waste (kg)</label><input type="number" id="otherVolume" placeholder="e.g. 30" min="0"></div>
+            <form id="dataCollectionForm">
+                <div class="form-group">
+                    <label for="ownerName">Collector / Entity Name</label>
+                    <input type="text" id="ownerName" required placeholder="Enter full name or entity..." />
                 </div>
                 <div class="form-group">
-                    <label>Waste Type(s) Collected</label>
-                    <select id="wasteType" multiple style="height:80px;">
-                        <option value="cooking_oil">🟢 Used Cooking Oil</option>
-                        <option value="engine_oil">🟡 Used Engine Oil</option>
-                        <option value="diesel">⛽ Used Diesel/Petrol</option>
-                        <option value="food_waste">🍌 Food / Organic Waste</option>
-                        <option value="plastic">♻️ Plastic Waste</option>
-                        <option value="cardboard">📦 Cardboard / Paper</option>
-                        <option value="aluminium">🥫 Aluminium / Tin</option>
-                        <option value="batteries">🔋 Batteries</option>
-                        <option value="ewaste">💻 Electronic Waste</option>
-                        <option value="other">📌 Other</option>
-                    </select>
-                    <span style="font-size:0.55rem; color:var(--text-muted);">Hold Ctrl (Cmd) to select multiple</span>
+                    <label for="area">Operating Area / Region</label>
+                    <input type="text" id="area" required placeholder="e.g., Gauteng Central" />
                 </div>
-                <div class="form-row-2">
-                    <div class="form-group"><label>Collection Frequency</label><select id="collectionFrequency"><option value="daily">Daily</option><option value="weekly" selected>Weekly</option><option value="monthly">Monthly</option><option value="onetime">One-off</option></select></div>
-                    <div class="form-group"><label>Estimated Monthly Volume (L/kg)</label><input type="number" id="monthlyVolume" placeholder="e.g. 500" min="0"></div>
+                <div class="form-group">
+                    <label for="oilVolume">Oil Volume Collected (Liters)</label>
+                    <input type="number" id="oilVolume" min="1" required placeholder="e.g., 250" />
                 </div>
-                <div class="form-group"><label>Current Disposal Method</label><select id="disposalMethod"><option value="unknown">— Select —</option><option value="dumped">Dumped on site</option><option value="informal">Informal collector</option><option value="licensed">Licensed collector</option><option value="unknown">Don't know</option></select></div>
-                <div class="form-section-title"><i class="fas fa-shield-alt"></i> Community Safety Contacts <span style="font-size:0.5rem; color:var(--text-muted); font-weight:400; text-transform:none; margin-left:4px;">(optional)</span></div>
-                <div class="form-row-3">
-                    <div class="form-group"><label>WhatsApp Group <span class="optional">(optional)</span></label><input type="text" id="whatsappGroup" placeholder="Group name or invite link"></div>
-                    <div class="form-group"><label>WhatsApp Admin <span class="optional">(optional)</span></label><input type="text" id="whatsappAdmin" placeholder="Admin name or phone"></div>
-                    <div class="form-group"><label>Security Company <span class="optional">(optional)</span></label><input type="text" id="securityCompany" placeholder="Security company name"></div>
+                <div class="form-group">
+                    <label for="contactPerson">Contact Person / Email</label>
+                    <input type="text" id="contactPerson" required placeholder="email@example.com or phone..." />
                 </div>
-                <div class="form-row-3">
-                    <div class="form-group"><label>Security Contact <span class="optional">(optional)</span></label><input type="text" id="securityContact" placeholder="Contact name or number"></div>
-                    <div class="form-group"><label>Police Station <span class="optional">(optional)</span></label><input type="text" id="policeStation" placeholder="Nearest police station"></div>
-                    <div class="form-group"><label>Police Ward Cell <span class="optional">(optional)</span></label><input type="text" id="policeWard" placeholder="Police ward or station number"></div>
+                <div class="form-group">
+                    <label for="notes">Additional Notes / Remarks</label>
+                    <textarea id="notes" rows="3" placeholder="Optional collection details..."></textarea>
                 </div>
-                <div class="form-group"><label>Notes / Observations</label><textarea id="notes" placeholder="Any additional information..."></textarea></div>
-                <div id="map"></div>
-                <div class="map-hint"><i class="fas fa-map-pin"></i> Click on the map to drop a pin — coordinates will be captured</div>
-                <input type="hidden" id="latitude" value="">
-                <input type="hidden" id="longitude" value="">
-                <button type="submit" class="btn-primary" id="submitBtn"><i class="fas fa-check-circle"></i> Submit Entry</button>
-                <div style="margin-top:10px; text-align:center; font-size:0.55rem; color:var(--text-secondary);"><i class="fas fa-lock"></i> Quantum-verified · CHSH S=2.76 · SA 2026/05142</div>
+                <button type="submit" id="submitBtn" class="btn-primary">
+                    <i class="fas fa-paper-plane"></i> Submit Entry & Issue Certificate
+                </button>
             </form>
-        </div>
-
-        <!-- COMMUNITY SECTION -->
-        <div id="communitySection" class="glass-card" style="border-color: var(--pelo-gold); background: linear-gradient(135deg, rgba(15,25,45,0.40), rgba(27,77,61,0.25));">
-            <div class="card-header" style="border-bottom-color: rgba(200,164,80,0.2);">
-                <i class="fas fa-hands-helping" style="color: var(--pelo-gold);"></i>
-                <h3 style="color: var(--pelo-gold);">🌍 Community Collection Network</h3>
-                <span class="count-badge" style="background: rgba(200,164,80,0.12); color: var(--pelo-gold);"><i class="fas fa-leaf"></i> Green Impact</span>
-            </div>
-            <div class="impact-grid">
-                <div class="impact-card"><div class="value gold" id="totalOilCollected">0</div><div class="label">Litres Cooking Oil</div></div>
-                <div class="impact-card"><div class="value green" id="totalSites">0</div><div class="label">Sites Registered</div></div>
-                <div class="impact-card"><div class="value cyan" id="totalCommunities">0</div><div class="label">Communities</div></div>
-                <div class="impact-card"><div class="value primary" id="totalCO2Saved">0</div><div class="label">kg CO₂ Prevented</div></div>
-            </div>
-            <div style="background: rgba(0,0,0,0.15); border-radius: 16px; padding: 20px; margin-top: 10px; border: 1px solid var(--glass-border);">
-                <h4 style="color: var(--pelo-gold); margin-bottom: 12px; font-size: 1rem;"><i class="fas fa-paper-plane"></i> Let's Build a Greener Future — Get Involved</h4>
-                <p style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 16px;">Request a collection, partner with us, or share your environmental initiative. We'll respond within 24 hours.</p>
-                <form id="communityEnquiryForm" action="https://formsubmit.co/mindtech.industriesai@gmail.com" method="POST" onsubmit="submitEnquiry(event)">
-                    <input type="hidden" name="_captcha" value="false">
-                    <input type="hidden" name="_subject" value="PELO Community Enquiry — New Request">
-                    <input type="hidden" name="_template" value="table">
-                    <input type="hidden" name="_autoresponse" value="Thank you for contacting PELO Data Collection. We'll respond within 24 hours. WhatsApp: +27 60 300 4859">
-                    <input type="hidden" name="_cc" value="mindtech.industriesai@gmail.com">
-                    <div class="form-row-2">
-                        <div class="form-group"><label><i class="fas fa-user"></i> Full Name <span class="required">*</span></label><input type="text" name="name" id="enquiryName" placeholder="Your full name" required></div>
-                        <div class="form-group"><label><i class="fas fa-envelope"></i> Email Address <span class="required">*</span></label><input type="email" name="email" id="enquiryEmail" placeholder="your@email.com" required></div>
-                    </div>
-                    <div class="form-row-2">
-                        <div class="form-group"><label><i class="fas fa-phone"></i> Phone Number</label><input type="tel" name="phone" id="enquiryPhone" placeholder="+27 82 555 1234"></div>
-                        <div class="form-group"><label><i class="fas fa-map-pin"></i> Community / Area</label><input type="text" name="area" id="enquiryArea" placeholder="e.g. Watville, Daveyton"></div>
-                    </div>
-                    <div class="form-group">
-                        <label><i class="fas fa-comment"></i> How can we partner? <span class="required">*</span></label>
-                        <select name="enquiryType" id="enquiryType" required>
-                            <option value="">— Select enquiry type —</option>
-                            <option value="collection">🔄 Request Collection — I have waste to donate</option>
-                            <option value="partner">🤝 Partnership — I want to collaborate</option>
-                            <option value="community">🌱 Community Initiative — I'm running a clean-up</option>
-                            <option value="supply">📦 Supply — I can supply waste materials</option>
-                            <option value="volunteer">🧑‍🤝‍🧑 Volunteer — I want to help</option>
-                            <option value="other">📌 Other — Let's talk</option>
-                        </select>
-                    </div>
-                    <div class="form-group"><label><i class="fas fa-recycle"></i> Your Message *</label><textarea name="message" id="enquiryMessage" rows="4" placeholder="Tell us about your waste, your community, or your environmental initiative..." required></textarea></div>
-                    <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, var(--pelo-green), var(--pelo-gold));"><i class="fas fa-rocket"></i> Send Enquiry — Join the Movement</button>
-                </form>
-                <div id="enquirySuccess" style="display: none; margin-top: 16px; padding: 16px; background: rgba(0,255,136,0.06); border: 1px solid var(--success); border-radius: 14px; text-align: center;">
-                    <p style="color: var(--success);"><i class="fas fa-check-circle"></i> <strong>Enquiry sent successfully! 🌍</strong></p>
-                    <p style="font-size: 0.65rem; color: var(--text-secondary); margin-top: 6px;">Thank you for being part of the solution. Our team will respond within 24 hours.<br>For urgent matters: WhatsApp +27 60 300 4859</p>
-                </div>
-            </div>
-            <div class="notice-board">
-                <div class="notice-header"><i class="fas fa-bullhorn"></i><span>COMMUNITY NOTICE BOARD</span><span class="badge">Live</span></div>
-                <div class="notice-content" id="noticeBoard">
-                    <p>🌱 <strong>PELO Recovery</strong> — Collecting used cooking oil from <strong>Watville</strong> this Friday. Call +27 82 555 1234 to donate.</p>
-                    <p>♻️ <strong>Community Clean-Up</strong> — Daveyton this Saturday. Meet at 8am at the community centre.</p>
-                    <p>💡 <strong>Did you know?</strong> 1 litre of used oil can be converted into 0.8 litres of biofuel. Every drop counts!</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- SUBMITTED ENTRIES -->
-        <div class="glass-card">
-            <div class="card-header"><i class="fas fa-database"></i><h3>Submitted Entries</h3><span class="count-badge" id="submittedCount">0 entries</span></div>
-            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
-                <button class="btn-secondary" onclick="exportCSV()"><i class="fas fa-file-export"></i> Export CSV</button>
-                <button class="btn-secondary" onclick="syncEntries()"><i class="fas fa-sync-alt"></i> Sync Now</button>
-                <button class="btn-secondary" onclick="clearAllEntries()" style="color:var(--danger);border-color:rgba(239,71,111,0.15);"><i class="fas fa-trash"></i> Clear All</button>
-            </div>
-            <div id="entriesList" class="entries-list"><p style="color:var(--text-secondary); font-size:0.75rem; text-align:center; padding:20px 0;">No entries yet. Submit your first site above.</p></div>
         </div>
 
         <!-- FOOTER -->
         <div class="footer">
-            <div class="footer-logos">
-                <img src="https://raw.githubusercontent.com/mindtechindustriesai-alt/my-images/main/pelo_community_final_image-removebg-preview.png" alt="PELO Recovery" class="footer-logo" onerror="this.style.display='none'">
-                <img src="https://i.postimg.cc/zXW78GNH/Mind-Tech-Transparent-Logo.png" alt="MindTech Industries" class="footer-logo" onerror="this.style.display='none'">
-                <img src="https://i.postimg.cc/T3ytnBqN/KD-LOGO-IMAGE-removebg-preview.png" alt="KD Concepts" class="footer-logo" onerror="this.style.display='none'">
-            </div>
-            <div class="quantum-line">⚛️ CHSH S=2.76 · SA 2026/05142</div>
-            <div class="copyright">© 2026 PELO Recovery · Powered by MindTech Industries · All data flows to mindtech.industriesai@gmail.com</div>
+            <p>© 2026 PELO Recovery · Powered by MindTech Industries</p>
+            <p style="margin-top: 4px;">⚛️ Canonical Anchor: CHSH S=2.76 (IBM Kingston) · On-Demand: S=2.02 (IBM Fez)</p>
         </div>
-
     </div>
 
-    <!-- ============================================================ -->
-    <!-- DEFENSIVE HANDSHAKE — DIRECT FETCH, NO ENTANGLEGUARD OBJECT -->
-    <!-- ============================================================ -->
+    <!-- SCRIPT LOGIC -->
     <script>
-        (function() {
-            const badge = document.getElementById('handshakeBadge');
-            if (!badge) return;
-
-            // Set to pending
-            badge.className = 'handshake-badge';
-            badge.innerHTML = '<i class="fas fa-satellite-dish"></i> Handshake: Pending...';
-
-            // Warm up + fetch
-            (async function runHandshake() {
-                try {
-                    // Warm-up (ignore errors)
-                    try {
-                        await fetch('https://pelo-complete.onrender.com/health', {
-                            method: 'GET',
-                            signal: AbortSignal.timeout(5000)
-                        });
-                    } catch (e) {}
-
-                    // CHSH fetch
-                    const res = await fetch('https://pelo-complete.onrender.com/api/v1/verify/chsh', {
-                        method: 'GET',
-                        headers: { 'Content-Type': 'application/json' },
-                        signal: AbortSignal.timeout(30000)
-                    });
-
-                    if (res.ok) {
-                        const data = await res.json();
-                        console.log('[Handshake] ✅ CHSH Confirmed:', data.S);
-                        badge.className = 'handshake-badge confirmed';
-                        badge.innerHTML = `<i class="fas fa-check-circle"></i> Handshake: CONFIRMED (S=${data.S || 2.76})`;
-                    } else {
-                        console.warn('[Handshake] ⚠️ Verifier returned', res.status);
-                        badge.className = 'handshake-badge unreachable';
-                        badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Handshake: UNREACHABLE';
-                    }
-                } catch (error) {
-                    console.warn('[Handshake] ⚠️ Verifier unreachable:', error.message);
-                    badge.className = 'handshake-badge unreachable';
-                    badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Handshake: UNREACHABLE';
-                }
-            })();
-        })();
-    </script>
-
-    <!-- ============================================================ -->
-    <!-- MAIN APP LOGIC (FIREBASE, MAP, ENTRIES, ETC.) -->
-    <!-- ============================================================ -->
-    <script>
-        // FIREBASE CONFIG
-        const firebaseConfig = {
+        // FIREBASE CONFIGURATION
+        var firebaseConfig = {
             apiKey: "AIzaSyD5OB59lG6bAsmQ7A97zXP_MfQ5AM3BYaw",
             authDomain: "mindflow-ai-education.firebaseapp.com",
             projectId: "mindflow-ai-education",
@@ -448,733 +229,131 @@
         };
 
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        auth.setPersistence(firebase.auth.Auth.Persistence.NONE);
+        var auth = firebase.auth();
+        var db = firebase.firestore();
 
-        // QUANTUM STATE
-        const QUANTUM_STATE = {
-            chsh: 2.76,
-            patent: 'SA 2026/05142',
-            verified: true,
-            timestamp: new Date().toISOString()
-        };
+        const BACKEND_URL = 'https://pelo-complete-bm8s.onrender.com';
+        const handshakeBadge = document.getElementById('handshakeBadge');
+        const form = document.getElementById('dataCollectionForm');
+        const submitBtn = document.getElementById('submitBtn');
 
-        function saveQuantumState() {
-            db.collection('quantum_state').doc('pelo_system').set({
-                ...QUANTUM_STATE,
-                lastVerified: firebase.firestore.FieldValue.serverTimestamp()
-            }).catch(() => {});
-        }
-
-        async function verifyQuantumState() {
+        // 1. Check Handshake on Page Load (15s timeout for Render cold start)
+        async function checkHandshake() {
+            handshakeBadge.className = 'handshake-badge';
+            handshakeBadge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Handshake: Checking...';
+            
             try {
-                const doc = await db.collection('quantum_state').doc('pelo_system').get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    console.log('⚛️ Quantum State Verified:', data);
-                    return data;
-                }
-                return QUANTUM_STATE;
-            } catch (e) {
-                console.log('⚛️ Using local quantum state');
-                return QUANTUM_STATE;
-            }
-        }
-
-        // STATE
-        let entries = [];
-        let map = null;
-        let marker = null;
-        let isOffline = !navigator.onLine;
-        let currentUser = null;
-        let isDemo = false;
-        let authResolved = false;
-
-        // SCREEN MANAGEMENT
-        function showScreen(screen) {
-            const loginOverlay = document.getElementById('loginOverlay');
-            const registerModal = document.getElementById('registerModal');
-            const collectorRegisterModal = document.getElementById('collectorRegisterModal');
-            const appContainer = document.getElementById('appContainer');
-
-            loginOverlay.classList.remove('hidden');
-            registerModal.classList.remove('visible');
-            collectorRegisterModal.classList.remove('visible');
-            appContainer.classList.remove('visible');
-
-            if (screen === 'login') {
-                loginOverlay.classList.remove('hidden');
-            } else if (screen === 'register') {
-                registerModal.classList.add('visible');
-            } else if (screen === 'collectorRegister') {
-                collectorRegisterModal.classList.add('visible');
-            } else if (screen === 'app') {
-                loginOverlay.classList.add('hidden');
-                appContainer.classList.add('visible');
-                checkAndShowCommunity();
-            }
-        }
-
-        function checkAndShowCommunity() {
-            const communitySection = document.getElementById('communitySection');
-            if (currentUser && (isDemo || !isDemo)) {
-                communitySection.classList.add('visible');
-                updateEnvironmentalStats();
-                console.log('🌍 Community section visible for:', currentUser.displayName || currentUser.email);
-            } else {
-                communitySection.classList.remove('visible');
-                console.log('🔒 Community section hidden — user not logged in');
-            }
-        }
-
-        // DOM REFS
-        const googleBtn = document.getElementById('googleSignInBtn');
-        const demoBtn = document.getElementById('demoLoginBtn');
-        const openRegisterBtn = document.getElementById('openRegisterBtn');
-        const closeRegisterBtn = document.getElementById('closeRegisterBtn');
-        const openCollectorRegisterBtn = document.getElementById('openCollectorRegisterBtn');
-        const closeCollectorRegisterBtn = document.getElementById('closeCollectorRegisterBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const loginError = document.getElementById('loginError');
-
-        // AUTH FUNCTIONS
-        function loginWithGoogle() {
-            loginError.textContent = '⏳ Signing in...';
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider)
-                .then((result) => {
-                    currentUser = result.user;
-                    isDemo = false;
-                    authResolved = true;
-                    loginError.textContent = '';
-                    document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.email || 'User';
-                    showScreen('app');
-                    loadEntries();
-                    loadUserData();
-                    saveQuantumState();
-                    showToast('✅ Welcome, ' + (currentUser.displayName || 'User') + '!');
-                })
-                .catch((error) => {
-                    loginError.textContent = '❌ ' + error.message;
+                const response = await fetch(`${BACKEND_URL}/health`, {
+                    method: 'GET',
+                    signal: AbortSignal.timeout(15000) // Increased to 15s
                 });
-        }
-
-        function loginAsDemo() {
-            currentUser = { uid: 'demo_' + Date.now(), displayName: 'Guest User', email: 'guest@pelorecovery.co.za' };
-            isDemo = true;
-            authResolved = true;
-            loginError.textContent = '';
-            document.getElementById('userNameDisplay').textContent = '👤 Guest User';
-            showScreen('app');
-            loadEntries();
-            showToast('👋 Welcome, Guest! Your data is saved locally.');
-        }
-
-        function registerUser(event) {
-            event.preventDefault();
-            const name = document.getElementById('regName').value.trim();
-            const email = document.getElementById('regEmail').value.trim();
-            const phone = document.getElementById('regPhone').value.trim();
-            const area = document.getElementById('regArea').value.trim();
-
-            if (!name || !email || !phone || !area) {
-                document.getElementById('registerError').textContent = '⚠️ All fields are required.';
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('_subject', 'PELO Registration — New User');
-            formData.append('_captcha', 'false');
-            formData.append('_template', 'table');
-            formData.append('_autoresponse', 'Thank you for registering with PELO Data Collection. Welcome to the community!');
-            formData.append('_cc', 'mindtech.industriesai@gmail.com');
-            formData.append('name', name);
-            formData.append('email', email);
-            formData.append('phone', phone);
-            formData.append('area', area);
-            formData.append('source', 'Registration Modal');
-
-            fetch('https://formsubmit.co/mindtech.industriesai@gmail.com', {
-                method: 'POST',
-                body: formData
-            }).catch(() => {});
-
-            db.collection('users').doc(email).set({
-                name: name, email: email, phone: phone || '', area: area || '',
-                registeredAt: firebase.firestore.FieldValue.serverTimestamp(),
-                isDemo: false, quantumState: QUANTUM_STATE
-            })
-            .then(() => {
-                document.getElementById('registerError').textContent = '';
-                currentUser = { uid: 'registered_' + email, displayName: name, email: email };
-                isDemo = true;
-                authResolved = true;
-                document.getElementById('userNameDisplay').textContent = '👤 ' + name;
-                showScreen('app');
-                showToast('✅ Account created! Welcome, ' + name + '!');
-                loadEntries();
-                saveQuantumState();
-            })
-            .catch((error) => {
-                document.getElementById('registerError').textContent = '❌ ' + error.message;
-            });
-        }
-
-        function registerCollector(event) {
-            event.preventDefault();
-            const name = document.getElementById('colRegName').value.trim();
-            const email = document.getElementById('colRegEmail').value.trim();
-            const phone = document.getElementById('colRegPhone').value.trim();
-            const area = document.getElementById('colRegArea').value.trim();
-            const experience = document.getElementById('colRegExperience').value;
-            const reason = document.getElementById('colRegReason').value.trim();
-
-            if (!name || !email || !phone || !area) {
-                document.getElementById('collectorRegisterError').textContent = '⚠️ All required fields must be filled.';
-                return;
-            }
-
-            db.collection('collectors').doc(email).set({
-                name: name, email: email, phone: phone, area: area,
-                experience: experience, reason: reason || 'Not specified',
-                registeredAt: firebase.firestore.FieldValue.serverTimestamp(),
-                quantumState: QUANTUM_STATE, status: 'active'
-            })
-            .then(() => {
-                document.getElementById('collectorRegisterError').textContent = '';
-                document.getElementById('collectorRegisterForm').reset();
-                showScreen('app');
-                showToast('✅ You are now registered as a PELO Collector! 🌍');
-                addCommunityNotice(`🎉 New Collector: <strong>${name}</strong> from ${area} — Welcome to the PELO network!`);
-                saveQuantumState();
-            })
-            .catch((error) => {
-                document.getElementById('collectorRegisterError').textContent = '❌ ' + error.message;
-            });
-        }
-
-        function logout() {
-            if (!isDemo && auth.currentUser) {
-                auth.signOut();
-            }
-            currentUser = null;
-            isDemo = false;
-            authResolved = false;
-            document.getElementById('communitySection').classList.remove('visible');
-            showScreen('login');
-            showToast('👋 Logged out.');
-        }
-
-        function loadUserData() {
-            if (!currentUser) return;
-            const userRef = db.collection('users').doc(currentUser.email || currentUser.uid);
-            userRef.get().then((doc) => {
-                if (doc.exists) {
-                    const data = doc.data();
-                    document.getElementById('userNameDisplay').textContent = data.name || currentUser.displayName || 'User';
+                if (response.ok) {
+                    handshakeBadge.className = 'handshake-badge connected';
+                    handshakeBadge.innerHTML = '<i class="fas fa-check-circle"></i> Handshake: CONNECTED';
+                } else {
+                    throw new Error('Backend returned ' + response.status);
                 }
-            }).catch(() => {});
+            } catch (err) {
+                console.error('Handshake error:', err);
+                handshakeBadge.className = 'handshake-badge unreachable';
+                handshakeBadge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Handshake: UNREACHABLE';
+            }
         }
 
-        // AUTH STATE LISTENER
-        auth.onAuthStateChanged((user) => {
-            authResolved = true;
-            if (user) {
-                currentUser = user;
-                isDemo = false;
-                document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.email || 'User';
-                showScreen('app');
-                loadEntries();
-                loadUserData();
-                verifyQuantumState();
-                console.log('✅ Session restored for:', user.email);
-            } else {
-                if (!isDemo) {
-                    showScreen('login');
-                    console.log('🔐 No session, showing login screen');
-                }
-            }
+        document.addEventListener('DOMContentLoaded', () => {
+            checkHandshake();
+            // Ensure auth state
+            auth.signInAnonymously().catch(err => console.warn('Anonymous auth warning:', err));
         });
 
-        // TIMEOUT FALLBACK
-        setTimeout(() => {
-            if (!authResolved) {
-                authResolved = true;
-                showScreen('login');
-                console.log('⏱️ Auth timeout: showing login screen');
-            }
-        }, 3000);
-
-        // EVENT LISTENERS
-        googleBtn.addEventListener('click', loginWithGoogle);
-        demoBtn.addEventListener('click', loginAsDemo);
-        openRegisterBtn.addEventListener('click', () => showScreen('register'));
-        closeRegisterBtn.addEventListener('click', () => showScreen('login'));
-        openCollectorRegisterBtn.addEventListener('click', () => showScreen('collectorRegister'));
-        closeCollectorRegisterBtn.addEventListener('click', () => showScreen('app'));
-        logoutBtn.addEventListener('click', logout);
-
-        // ENVIRONMENTAL IMPACT STATS
-        function updateEnvironmentalStats() {
-            const totalOil = entries.reduce((sum, e) => sum + (parseInt(e.oilVolume) || 0), 0);
-            const totalSites = entries.length;
-            const uniqueAreas = new Set(entries.map(e => e.area)).size;
-            const co2Saved = Math.round(totalOil * 0.8 * 0.75);
-
-            document.getElementById('totalOilCollected').textContent = totalOil + 'L';
-            document.getElementById('totalSites').textContent = totalSites;
-            document.getElementById('totalCommunities').textContent = uniqueAreas;
-            document.getElementById('totalCO2Saved').textContent = co2Saved + 'kg';
-        }
-
-        // COMMUNITY ENQUIRY
-        function submitEnquiry(event) {
-            event.preventDefault();
-            const form = document.getElementById('communityEnquiryForm');
-            const successDiv = document.getElementById('enquirySuccess');
-
-            const btn = form.querySelector('button[type="submit"]');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-            btn.disabled = true;
-
-            const formData = new FormData(form);
-            fetch(form.action, { method: 'POST', body: formData })
-            .then(() => {
-                successDiv.style.display = 'block';
-                form.reset();
-                btn.innerHTML = '<i class="fas fa-check"></i> Sent!';
-                setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 3000);
-                showToast('🌍 Enquiry sent! Together we\'re building a greener future.', 'success');
-                addCommunityNotice('💬 New enquiry submitted — Team is on it!');
-            })
-            .catch(() => {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-                showToast('❌ Something went wrong. Please try again.', 'error');
-            });
-        }
-
-        // NOTICE BOARD
-        function addCommunityNotice(notice) {
-            const board = document.getElementById('noticeBoard');
-            const p = document.createElement('p');
-            p.innerHTML = notice;
-            board.insertBefore(p, board.firstChild);
-            if (board.children.length > 10) {
-                board.removeChild(board.lastChild);
-            }
-        }
-
-        // OFFLINE DETECTION
-        function updateOfflineStatus() {
-            isOffline = !navigator.onLine;
-            const indicator = document.getElementById('offlineIndicator');
-            const text = document.getElementById('offlineText');
-
-            if (isOffline) {
-                indicator.classList.add('visible');
-                text.textContent = 'You are offline — data will be saved locally and synced when online';
-            } else {
-                indicator.classList.remove('visible');
-                if (entries.some(e => !e.synced)) {
-                    syncEntries();
-                }
-            }
-        }
-
-        window.addEventListener('online', updateOfflineStatus);
-        window.addEventListener('offline', updateOfflineStatus);
-
-        // LOAD ENTRIES
-        function loadEntries() {
-            try {
-                const saved = localStorage.getItem('pelo_data_entries');
-                if (saved) entries = JSON.parse(saved);
-            } catch(e) { entries = []; }
-            renderEntries();
-            updateCounts();
-            updateOfflineStatus();
-            if (document.getElementById('communitySection').classList.contains('visible')) {
-                updateEnvironmentalStats();
-            }
-        }
-
-        function saveEntries() {
-            localStorage.setItem('pelo_data_entries', JSON.stringify(entries));
-            renderEntries();
-            updateCounts();
-            if (document.getElementById('communitySection').classList.contains('visible')) {
-                updateEnvironmentalStats();
-            }
-        }
-
-        // RENDER ENTRIES
-        function renderEntries() {
-            const container = document.getElementById('entriesList');
-            if (entries.length === 0) {
-                container.innerHTML = `<p style="color:var(--text-secondary); font-size:0.75rem; text-align:center; padding:20px 0;">No entries yet. Submit your first site above.</p>`;
-                return;
-            }
-
-            let html = '';
-            entries.forEach((entry, index) => {
-                const siteTypeLabels = { 'mechanic': '🔧 Mechanic', 'generator': '⚡ Generator', 'garage': '🚗 Garage', 'mine': '⛏️ Mine', 'fastfood': '🍔 Fast Food', 'kota': '🍟 Kota / Amagwinya', 'roadhouse': '🏍️ Roadhouse', 'spaza': '🏪 Spaza / Tuck Shop', 'other': '📌 Other' };
-                const typeLabel = siteTypeLabels[entry.siteType] || entry.siteType;
-                const syncStatus = entry.synced ? '✅ Synced' : '⏳ Pending sync';
-
-                html += `
-                    <div class="entry-item" data-index="${index}">
-                        <div class="entry-info">
-                            <span class="name">${escapeHtml(entry.ownerName)}</span>
-                            <span class="details">${typeLabel} · ${escapeHtml(entry.contactPerson)} · ${escapeHtml(entry.phone)}</span>
-                            <span class="location">📍 ${escapeHtml(entry.area)} · ${escapeHtml(entry.oilVolume || 0)}L cooking oil</span>
-                            ${entry.whatsappGroup ? `<span class="location">💬 ${escapeHtml(entry.whatsappGroup)}</span>` : ''}
-                            ${entry.userName ? `<span class="location">👤 ${escapeHtml(entry.userName)}</span>` : ''}
-                        </div>
-                        <div class="entry-actions">
-                            <span class="entry-status">${syncStatus}</span>
-                            <button class="btn-danger" onclick="deleteEntry(${index})"><i class="fas fa-times"></i></button>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        }
-
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function updateCounts() {
-            document.getElementById('entryCount').textContent = entries.length + ' entries';
-            document.getElementById('submittedCount').textContent = entries.length + ' entries';
-        }
-
-        // SYNC ENTRIES
-        function syncEntries() {
-            const pending = entries.filter(e => !e.synced);
-            if (pending.length === 0) {
-                showToast('✅ All entries are already synced.', 'success');
-                return;
-            }
-            if (isOffline) {
-                showToast('⚠️ You are offline. Entries will sync when you are online.', 'error');
-                return;
-            }
-
-            let syncedCount = 0;
-            pending.forEach((entry, idx) => {
-                submitToEmail(entry, function(success) {
-                    if (success) { entry.synced = true; syncedCount++; }
-                    if (idx === pending.length - 1) {
-                        saveEntries();
-                        showToast(`✅ Synced ${syncedCount} of ${pending.length} entries.`, 'success');
-                    }
-                });
-            });
-        }
-
-        // SUBMIT ENTRY
-        function submitEntry(event) {
-            event.preventDefault();
-
-            const siteType = document.getElementById('siteType').value;
+        // 2 & 3. Handle Form Submission, Backend Call, and Firestore Storage
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
             const ownerName = document.getElementById('ownerName').value.trim();
-            const contactPerson = document.getElementById('contactPerson').value.trim();
-            const phoneNumber = document.getElementById('phoneNumber').value.trim();
             const area = document.getElementById('area').value.trim();
-            const address = document.getElementById('address').value.trim();
-            const oilVolume = document.getElementById('oilVolume').value;
-            const engineOil = document.getElementById('engineOil').value || 0;
-            const otherVolume = document.getElementById('otherVolume').value || 0;
-            const wasteType = document.getElementById('wasteType');
-            const wasteTypes = Array.from(wasteType.selectedOptions).map(opt => opt.value);
-            const collectionFrequency = document.getElementById('collectionFrequency').value;
-            const monthlyVolume = document.getElementById('monthlyVolume').value || 0;
-            const disposalMethod = document.getElementById('disposalMethod').value;
+            const oilVolume = parseFloat(document.getElementById('oilVolume').value) || 0;
+            const contactPerson = document.getElementById('contactPerson').value.trim();
             const notes = document.getElementById('notes').value.trim();
-            const latitude = document.getElementById('latitude').value;
-            const longitude = document.getElementById('longitude').value;
-            const whatsappGroup = document.getElementById('whatsappGroup').value.trim();
-            const whatsappAdmin = document.getElementById('whatsappAdmin').value.trim();
-            const securityCompany = document.getElementById('securityCompany').value.trim();
-            const securityContact = document.getElementById('securityContact').value.trim();
-            const policeStation = document.getElementById('policeStation').value.trim();
-            const policeWard = document.getElementById('policeWard').value.trim();
+            const timestamp = new Date().toISOString();
 
-            if (!ownerName || !contactPerson || !phoneNumber || !area || !oilVolume) {
-                showToast('⚠️ Please fill in all required fields.', 'error');
+            if (!ownerName || !area || oilVolume <= 0) {
+                showToast('❌ Please fill in all required fields correctly.', 'error');
                 return;
             }
 
-            const userName = currentUser ? (currentUser.displayName || currentUser.email || 'Guest') : 'Anonymous';
-            const userId = currentUser ? (currentUser.uid || currentUser.email || 'unknown') : 'unknown';
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing & Issuing Certificate...';
 
-            const entry = {
-                id: Date.now(), siteType, ownerName, contactPerson, phone: phoneNumber, area, address,
-                oilVolume: parseInt(oilVolume) || 0, engineOil: parseInt(engineOil) || 0, otherVolume: parseInt(otherVolume) || 0,
-                wasteTypes, collectionFrequency, monthlyVolume: parseInt(monthlyVolume) || 0, disposalMethod, notes,
-                latitude, longitude, whatsappGroup, whatsappAdmin, securityCompany, securityContact, policeStation, policeWard,
-                userId, userName, timestamp: new Date().toISOString(), chsh_s: '2.76', patent: 'SA 2026/05142', status: 'submitted', synced: false
-            };
-
-            entries.push(entry);
-            saveEntries();
-
-            db.collection('entries').doc(entry.id.toString()).set({
-                ...entry,
-                firestoreTimestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).catch(() => {});
-
-            if (!isOffline) {
-                submitToEmail(entry, function(success) {
-                    if (success) { entry.synced = true; saveEntries(); }
-                });
-            } else {
-                showToast('📶 You are offline. Entry saved locally. Will sync when online.', 'info');
-            }
-
-            addCommunityNotice(`📍 New site registered: <strong>${ownerName}</strong> in ${area} — ${oilVolume}L oil collected!`);
-
-            document.getElementById('dataForm').reset();
-            document.getElementById('latitude').value = '';
-            document.getElementById('longitude').value = '';
-            document.getElementById('oilVolume').value = '';
-            document.getElementById('engineOil').value = '';
-            document.getElementById('otherVolume').value = '';
-            document.getElementById('monthlyVolume').value = '';
-            document.getElementById('notes').value = '';
-            document.getElementById('whatsappGroup').value = '';
-            document.getElementById('whatsappAdmin').value = '';
-            document.getElementById('securityCompany').value = '';
-            document.getElementById('securityContact').value = '';
-            document.getElementById('policeStation').value = '';
-            document.getElementById('policeWard').value = '';
-
-            if (marker) {
-                map.removeLayer(marker);
-                marker = null;
-            }
-
-            showToast('✅ Entry submitted! Quantum-verified data saved.', 'success');
-        }
-
-        // SUBMIT TO EMAIL
-        function submitToEmail(entry, callback) {
             try {
-                const formData = new FormData();
-                formData.append('_subject', 'PELO Data Collection — New Entry');
-                formData.append('_captcha', 'false');
-                formData.append('_template', 'table');
-                formData.append('Submitted By', entry.userName || 'Anonymous');
-                formData.append('User ID', entry.userId || 'unknown');
-                formData.append('Site Type', entry.siteType);
-                formData.append('Owner Name', entry.ownerName);
-                formData.append('Contact Person', entry.contactPerson);
-                formData.append('Phone Number', entry.phone);
-                formData.append('Area / Community', entry.area);
-                formData.append('Address', entry.address || 'N/A');
-                formData.append('Cooking Oil (L/mo)', entry.oilVolume);
-                formData.append('Engine Oil (L/mo)', entry.engineOil);
-                formData.append('Other Waste (kg/mo)', entry.otherVolume);
-                formData.append('Waste Types', (entry.wasteTypes || []).join(', ') || 'N/A');
-                formData.append('Collection Frequency', entry.collectionFrequency || 'N/A');
-                formData.append('Monthly Volume', entry.monthlyVolume || 'N/A');
-                formData.append('Disposal Method', entry.disposalMethod || 'Not specified');
-                formData.append('Notes', entry.notes || 'N/A');
-                formData.append('Latitude', entry.latitude || 'N/A');
-                formData.append('Longitude', entry.longitude || 'N/A');
-                formData.append('WhatsApp Group', entry.whatsappGroup || 'N/A');
-                formData.append('WhatsApp Admin', entry.whatsappAdmin || 'N/A');
-                formData.append('Security Company', entry.securityCompany || 'N/A');
-                formData.append('Security Contact', entry.securityContact || 'N/A');
-                formData.append('Police Station', entry.policeStation || 'N/A');
-                formData.append('Police Ward Cell', entry.policeWard || 'N/A');
-                formData.append('CHSH S', entry.chsh_s);
-                formData.append('Patent', entry.patent);
-                formData.append('Timestamp', entry.timestamp);
-                formData.append('Entry ID', entry.id);
+                // Step 1: Call Backend API to issue certificate
+                const payload = {
+                    entry_id: 'PELO-' + Date.now(),
+                    owner_name: ownerName,
+                    area: area,
+                    oil_volume: oilVolume,
+                    contact_person: contactPerson,
+                    notes: notes,
+                    timestamp: timestamp
+                };
 
-                fetch('https://formsubmit.co/mindtech.industriesai@gmail.com', { method: 'POST', body: formData })
-                .then(() => { if (callback) callback(true); })
-                .catch(() => { if (callback) callback(false); });
-            } catch(e) {
-                console.warn('Email submit error:', e);
-                if (callback) callback(false);
-            }
-        }
+                const apiResponse = await fetch(`${BACKEND_URL}/api/v1/issue/certificate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
 
-        // DELETE ENTRY
-        function deleteEntry(index) {
-            if (confirm('Delete this entry?')) {
-                const entry = entries[index];
-                if (entry && entry.id) {
-                    db.collection('entries').doc(entry.id.toString()).delete().catch(() => {});
+                if (!apiResponse.ok) {
+                    const errData = await apiResponse.json().catch(() => ({}));
+                    throw new Error(errData.detail || 'Backend certificate issuance failed');
                 }
-                entries.splice(index, 1);
-                saveEntries();
-                showToast('🗑️ Entry deleted.', 'info');
-            }
-        }
 
-        // CLEAR ALL ENTRIES
-        function clearAllEntries() {
-            if (entries.length === 0) {
-                showToast('No entries to clear.', 'info');
-                return;
-            }
-            if (confirm('Delete ALL entries? This cannot be undone.')) {
-                entries.forEach(entry => {
-                    if (entry && entry.id) {
-                        db.collection('entries').doc(entry.id.toString()).delete().catch(() => {});
-                    }
-                });
-                entries = [];
-                saveEntries();
-                showToast('🗑️ All entries cleared.', 'info');
-            }
-        }
+                const result = await apiResponse.json();
+                const certificateHash = result.certificate_hash;
+                const signature = result.signature;
 
-        // EXPORT CSV
-        function exportCSV() {
-            if (entries.length === 0) {
-                showToast('⚠️ No entries to export.', 'error');
-                return;
-            }
+                if (!certificateHash) {
+                    throw new Error('No certificate hash returned from backend.');
+                }
 
-            const headers = ['ID', 'Site Type', 'Owner Name', 'Contact Person', 'Phone', 'Area', 'Address',
-                'Cooking Oil (L)', 'Engine Oil (L)', 'Other Waste (kg)', 'Waste Types', 'Collection Frequency',
-                'Monthly Volume', 'Disposal Method', 'Notes', 'Latitude', 'Longitude',
-                'WhatsApp Group', 'WhatsApp Admin', 'Security Company', 'Security Contact',
-                'Police Station', 'Police Ward Cell', 'User ID', 'User Name',
-                'CHSH S', 'Patent', 'Timestamp', 'Status', 'Synced'
-            ];
+                // Step 2: Store Entry in Firestore with certificate_hash
+                const entryData = {
+                    ownerName: ownerName,
+                    area: area,
+                    oilVolume: oilVolume,
+                    contactPerson: contactPerson,
+                    notes: notes,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    auditStatus: 'verified',
+                    certificate_hash: certificateHash,
+                    signature: signature || ''
+                };
 
-            let csv = headers.join(',') + '\n';
+                await db.collection('entries').add(entryData);
 
-            entries.forEach(e => {
-                const row = [
-                    e.id, `"${e.siteType}"`, `"${e.ownerName}"`, `"${e.contactPerson}"`, `"${e.phone}"`,
-                    `"${e.area}"`, `"${e.address || ''}"`, e.oilVolume || 0, e.engineOil || 0, e.otherVolume || 0,
-                    `"${(e.wasteTypes || []).join('; ')}"`, `"${e.collectionFrequency || ''}"`, e.monthlyVolume || 0,
-                    `"${e.disposalMethod || ''}"`, `"${e.notes || ''}"`, `"${e.latitude || ''}"`, `"${e.longitude || ''}"`,
-                    `"${e.whatsappGroup || ''}"`, `"${e.whatsappAdmin || ''}"`, `"${e.securityCompany || ''}"`,
-                    `"${e.securityContact || ''}"`, `"${e.policeStation || ''}"`, `"${e.policeWard || ''}"`,
-                    `"${e.userId || ''}"`, `"${e.userName || ''}"`, `"${e.chsh_s}"`, `"${e.patent}"`,
-                    `"${e.timestamp}"`, `"${e.status}"`, e.synced ? 'Yes' : 'No'
-                ];
-                csv += row.join(',') + '\n';
-            });
+                showToast('✅ Entry submitted & Certificate Hash stored successfully!', 'success');
+                form.reset();
 
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `pelo_data_${new Date().toISOString().slice(0,10)}.csv`;
-            a.click();
-            URL.revokeObjectURL(url);
-
-            showToast('📊 CSV exported successfully!', 'success');
-        }
-
-        // MAP
-        function initMap() {
-            const container = document.getElementById('map');
-
-            try {
-                map = L.map('map').setView([-26.194, 28.241], 13);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; OpenStreetMap contributors',
-                    maxZoom: 19
-                }).addTo(map);
-
-                map.on('click', function(e) {
-                    const lat = e.latlng.lat;
-                    const lng = e.latlng.lng;
-
-                    if (marker) map.removeLayer(marker);
-
-                    marker = L.marker([lat, lng]).addTo(map);
-                    marker.bindPopup(`📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`).openPopup();
-
-                    document.getElementById('latitude').value = lat.toFixed(6);
-                    document.getElementById('longitude').value = lng.toFixed(6);
-
-                    showToast('📍 Pin dropped! Coordinates captured.', 'info');
-                });
-
-                console.log('🗺️ Map initialized');
             } catch (error) {
-                console.warn('Map error:', error);
-                container.innerHTML = `
-                    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:0.75rem;flex-direction:column;gap:10px;">
-                        <i class="fas fa-map" style="font-size:1.8rem;opacity:0.3;"></i>
-                        <p>Map loading... Click below to add coordinates manually.</p>
-                        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
-                            <input type="text" id="manualLat" placeholder="Latitude" style="padding:6px 10px;background:rgba(0,0,0,0.3);border:1px solid var(--glass-border);border-radius:8px;color:white;width:100px;">
-                            <input type="text" id="manualLng" placeholder="Longitude" style="padding:6px 10px;background:rgba(0,0,0,0.3);border:1px solid var(--glass-border);border-radius:8px;color:white;width:100px;">
-                            <button onclick="setManualCoords()" style="padding:6px 14px;background:var(--pelo-gold);border:none;border-radius:8px;color:#000;font-weight:600;cursor:pointer;">Set</button>
-                        </div>
-                    </div>
-                `;
+                console.error('Submission error:', error);
+                showToast('❌ Error: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Entry & Issue Certificate';
             }
-        }
-
-        function setManualCoords() {
-            const lat = document.getElementById('manualLat')?.value;
-            const lng = document.getElementById('manualLng')?.value;
-            if (lat && lng) {
-                document.getElementById('latitude').value = lat;
-                document.getElementById('longitude').value = lng;
-                showToast('📍 Coordinates set manually.', 'info');
-            }
-        }
-
-        // TOAST
-        function showToast(msg, type) {
-            const existing = document.querySelector('.toast');
-            if (existing) existing.remove();
-
-            const div = document.createElement('div');
-            div.className = 'toast';
-            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '💡';
-            div.innerHTML = icon + ' ' + msg;
-            document.body.appendChild(div);
-
-            setTimeout(() => {
-                if (div.parentNode) div.remove();
-            }, 3500);
-        }
-
-        // INIT
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('registerModal').classList.remove('visible');
-            document.getElementById('collectorRegisterModal').classList.remove('visible');
-            document.getElementById('appContainer').classList.remove('visible');
-            document.getElementById('communitySection').classList.remove('visible');
-
-            initMap();
-            loadEntries();
-            updateOfflineStatus();
-            verifyQuantumState();
-
-            console.log('🚀 PELO Data Collection v3.0 — FULL INTEGRATION');
-            console.log('   ⚛️ QUANTUM BACKEND: CHSH S=2.76 · SA 2026/05142');
-            console.log('   📧 ALL forms submit to: mindtech.industriesai@gmail.com');
-            console.log('   📍 Registration includes Area field');
-            console.log('   👤 Collector Registration inside app');
-            console.log('   🔐 Community section visible ONLY after login/registration');
-            console.log('   🌍 Environmental Impact Stats');
-            console.log('   📶 Offline capable — auto-sync');
-            console.log('   💬 Community Notice Board');
-            console.log('   🗄️ Firestore: All logs stored with user identification');
         });
-    </script>
 
+        function showToast(msg, type) {
+            var existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            var div = document.createElement('div');
+            div.className = 'toast';
+            if (type === 'error') div.style.borderColor = 'var(--danger)';
+            if (type === 'success') div.style.borderColor = 'var(--success)';
+            div.textContent = msg;
+            document.body.appendChild(div);
+            setTimeout(function() { if (div.parentNode) div.remove(); }, 4000);
+        }
+    </script>
 </body>
 </html>
